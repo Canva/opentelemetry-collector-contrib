@@ -843,7 +843,7 @@ func TestProcessorResetExemplarData(t *testing.T) {
 
 // ------------------------------------------------------- start of additional block of tests -------------------------------------------------------
 
-func TestTraceLatencyExceedMaxInt(t *testing.T) {
+func TestTraceLatencyExceedsMaxInt64(t *testing.T) {
 	mexp := &mocks.MetricsExporter{}
 	tcon := &mocks.TracesConsumer{}
 
