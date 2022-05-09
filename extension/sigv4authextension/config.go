@@ -16,6 +16,7 @@ package sigv4authextension // import "github.com/open-telemetry/opentelemetry-co
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"go.opentelemetry.io/collector/config"
@@ -49,7 +50,7 @@ var _ config.Extension = (*Config)(nil)
 func (cfg *Config) Validate() error {
 	credsProvider, err := getCredsProviderFromConfig(cfg)
 	if credsProvider == nil || err != nil {
-		return errBadCreds
+		return errors.New(fmt.Sprintf("%v\nOriginal error:%v", errBadCreds, err))
 	}
 	cfg.credsProvider = credsProvider
 
