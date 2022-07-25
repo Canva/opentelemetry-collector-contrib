@@ -3,7 +3,7 @@ module github.com/open-telemetry/opentelemetry-collector-contrib/exporter/google
 go 1.17
 
 require (
-	cloud.google.com/go/pubsub v1.23.1
+	cloud.google.com/go/pubsub v1.24.0
 	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.8.0
 	go.opentelemetry.io/collector v0.54.1-0.20220705210223-9f0d97ca5741
