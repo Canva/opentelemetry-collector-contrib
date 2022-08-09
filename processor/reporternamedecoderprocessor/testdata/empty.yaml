@@ -1,0 +1,19 @@
+receivers:
+  nop:
+
+processors:
+  reporternamedecoder:
+
+exporters:
+  nop:
+
+service:
+  pipelines:
+    traces:
+      receivers:
+        - nop
+      processors:
+        - reporternamedecoder
+      exporters:
+        - nop
+

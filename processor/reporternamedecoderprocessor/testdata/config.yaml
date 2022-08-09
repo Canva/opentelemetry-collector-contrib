@@ -1,0 +1,20 @@
+receivers:
+  nop:
+
+processors:
+  reporternamedecoder:
+    s3_bucket_url: "Some url"
+
+exporters:
+  nop:
+
+service:
+  pipelines:
+    traces:
+      receivers:
+        - nop
+      processors:
+        - reporternamedecoder
+      exporters:
+        - nop
+
