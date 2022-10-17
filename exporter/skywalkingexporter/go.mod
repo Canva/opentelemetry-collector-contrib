@@ -10,7 +10,7 @@ require (
 	go.opentelemetry.io/collector/pdata v0.54.1-0.20220705210223-9f0d97ca5741
 	go.opentelemetry.io/collector/semconv v0.54.1-0.20220705210223-9f0d97ca5741
 	go.uber.org/atomic v1.9.0
-	google.golang.org/grpc v1.47.0
+	google.golang.org/grpc v1.50.1
 	skywalking.apache.org/repo/goapi v0.0.0-20211122071111-ffc517fbfe21
 )
 
