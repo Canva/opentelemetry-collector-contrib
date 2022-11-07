@@ -11,8 +11,8 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/metrics v0.54.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.54.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/kubelet v0.54.0
-	github.com/shirou/gopsutil/v3 v3.22.6
-	github.com/stretchr/testify v1.8.0
+	github.com/shirou/gopsutil/v3 v3.22.10
+	github.com/stretchr/testify v1.8.1
 	go.opentelemetry.io/collector v0.54.1-0.20220705210223-9f0d97ca5741
 	go.opentelemetry.io/collector/pdata v0.54.1-0.20220705210223-9f0d97ca5741
 	go.uber.org/zap v1.21.0
@@ -56,7 +56,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
-	github.com/google/go-cmp v0.5.8 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
@@ -97,7 +97,7 @@ require (
 	github.com/seccomp/libseccomp-golang v0.9.2-0.20210429002308-3879420cc921 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.4.0 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.4.0 // indirect
