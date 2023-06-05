@@ -7,7 +7,7 @@ require (
 	github.com/google/go-cmp v0.5.8
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/scrapertest v0.54.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/opencensus v0.54.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/collector v0.54.1-0.20220705210223-9f0d97ca5741
 	go.opentelemetry.io/collector/pdata v0.54.1-0.20220705210223-9f0d97ca5741
 	go.uber.org/zap v1.21.0
