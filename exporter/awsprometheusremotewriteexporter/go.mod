@@ -6,7 +6,7 @@ go 1.17
 require (
 	github.com/aws/aws-sdk-go v1.44.47
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter v0.54.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/collector v0.54.1-0.20220705210223-9f0d97ca5741
 )
 
