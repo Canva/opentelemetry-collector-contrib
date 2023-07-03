@@ -11,7 +11,7 @@ require (
 	go.opencensus.io v0.23.0
 	go.opentelemetry.io/collector/pdata v0.54.1-0.20220705210223-9f0d97ca5741
 	go.opentelemetry.io/collector/semconv v0.54.1-0.20220705210223-9f0d97ca5741
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/protobuf v1.31.0
 )
 
 require (
