@@ -40,27 +40,22 @@ func NewCompressor(format string, log *zap.Logger) (Compressor, error) {
 				New: func() any {
 					w, err := flate.NewWriter(nil, flate.BestSpeed)
 					if err != nil {
-						err_msg := fmt.Sprintf("Unable to instantiate Flat compressor: %v", err)
-						log.Error(err_msg)
+						errMsg := fmt.Sprintf("Unable to instantiate Flate compressor: %v", err)
+						log.Error(errMsg)
 					}
 					return w
 				},
 			},
 		}
 	case "gzip":
-		//w, err := gzip.NewWriterLevel(nil, gzip.BestSpeed)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//c.compression = w
 
 		c = &compressor{
 			compressionPool: sync.Pool{
 				New: func() any {
 					w, err := gzip.NewWriterLevel(nil, gzip.BestSpeed)
 					if err != nil {
-						err_msg := fmt.Sprintf("Unable to instantiate Flat compressor: %v", err)
-						log.Error(err_msg)
+						errMsg := fmt.Sprintf("Unable to instantiate Gzip compressor: %v", err)
+						log.Error(errMsg)
 					}
 					return w
 				},
@@ -72,8 +67,8 @@ func NewCompressor(format string, log *zap.Logger) (Compressor, error) {
 				New: func() any {
 					w, err := zlib.NewWriterLevel(nil, zlib.BestSpeed)
 					if err != nil {
-						err_msg := fmt.Sprintf("Unable to instantiate Flat compressor: %v", err)
-						log.Error(err_msg)
+						errMsg := fmt.Sprintf("Unable to instantiate Zlib compressor: %v", err)
+						log.Error(errMsg)
 					}
 					return w
 				},
