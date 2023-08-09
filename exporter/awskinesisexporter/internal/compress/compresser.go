@@ -42,6 +42,7 @@ func NewCompressor(format string, log *zap.Logger) (Compressor, error) {
 					if err != nil {
 						errMsg := fmt.Sprintf("Unable to instantiate Flate compressor: %v", err)
 						log.Error(errMsg)
+						return nil
 					}
 					return w
 				},
@@ -56,6 +57,7 @@ func NewCompressor(format string, log *zap.Logger) (Compressor, error) {
 					if err != nil {
 						errMsg := fmt.Sprintf("Unable to instantiate Gzip compressor: %v", err)
 						log.Error(errMsg)
+						return nil
 					}
 					return w
 				},
@@ -69,6 +71,7 @@ func NewCompressor(format string, log *zap.Logger) (Compressor, error) {
 					if err != nil {
 						errMsg := fmt.Sprintf("Unable to instantiate Zlib compressor: %v", err)
 						log.Error(errMsg)
+						return nil
 					}
 					return w
 				},
