@@ -1,4 +1,4 @@
-module github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awskinesisexporter
+module github.com/canva/opentelemetry-collector-contrib/exporter/awskinesisexporter
 
 go 1.19
 
