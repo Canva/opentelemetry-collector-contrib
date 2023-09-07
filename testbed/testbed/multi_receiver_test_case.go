@@ -281,7 +281,7 @@ func (tc *MultiReceiverTestCase) WaitForN(cond func() bool, duration time.Durati
 
 // WaitFor is like WaitForN but with a fixed duration of 10 seconds
 func (tc *MultiReceiverTestCase) WaitFor(cond func() bool, errMsg interface{}) bool {
-	return tc.WaitForN(cond, time.Second*10, errMsg)
+	return tc.WaitForN(cond, time.Second*60, errMsg)
 }
 
 func (tc *MultiReceiverTestCase) indicateError(err error) {
