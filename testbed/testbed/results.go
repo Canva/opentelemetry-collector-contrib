@@ -302,8 +302,8 @@ func (r *MultiReceiverTestResults) Init(resultsDir string) {
 	_, _ = io.WriteString(r.resultsFile,
 		"# Test Results\n"+
 			fmt.Sprintf("Started: %s\n\n", time.Now().Format(time.RFC1123Z))+
-			"Test                                    |Result|Duration|Failure Count|\n"+
-			"----------------------------------------|------|-------:|------------:|\n")
+			"Test                                                        |Result|Duration|Failure Count|\n"+
+			"------------------------------------------------------------|------|-------:|------------:|\n")
 }
 
 func (r *MultiReceiverTestResults) Add(_ string, result interface{}) {
