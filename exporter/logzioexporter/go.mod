@@ -11,7 +11,7 @@ require (
 	go.opentelemetry.io/collector/component v0.82.0
 	go.opentelemetry.io/collector/config/configcompression v0.82.0
 	go.opentelemetry.io/collector/config/confighttp v0.82.0
-	go.opentelemetry.io/collector/config/configopaque v0.82.0
+	go.opentelemetry.io/collector/config/configopaque v0.85.0
 	go.opentelemetry.io/collector/confmap v0.82.0
 	go.opentelemetry.io/collector/consumer v0.82.0
 	go.opentelemetry.io/collector/exporter v0.82.0
