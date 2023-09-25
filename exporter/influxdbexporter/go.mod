@@ -14,7 +14,7 @@ require (
 	go.opentelemetry.io/collector/confmap v0.82.0
 	go.opentelemetry.io/collector/consumer v0.82.0
 	go.opentelemetry.io/collector/exporter v0.82.0
-	go.uber.org/zap v1.25.0
+	go.uber.org/zap v1.26.0
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 )
 
