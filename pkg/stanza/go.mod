@@ -16,7 +16,7 @@ require (
 	go.opentelemetry.io/collector v0.82.0
 	go.opentelemetry.io/collector/component v0.82.0
 	go.opentelemetry.io/collector/config/configtls v0.82.0
-	go.opentelemetry.io/collector/confmap v0.82.0
+	go.opentelemetry.io/collector/confmap v0.85.0
 	go.opentelemetry.io/collector/consumer v0.82.0
 	go.opentelemetry.io/collector/extension v0.82.0
 	go.opentelemetry.io/collector/featuregate v1.0.0-rcv0014
