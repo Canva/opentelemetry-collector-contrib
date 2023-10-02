@@ -11,7 +11,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.3
 	go.opentelemetry.io/collector v0.82.0
 	go.opentelemetry.io/collector/component v0.82.0
-	go.opentelemetry.io/collector/confmap v0.82.0
+	go.opentelemetry.io/collector/confmap v0.86.0
 	go.opentelemetry.io/collector/consumer v0.82.0
 	go.opentelemetry.io/collector/pdata v1.0.0-rcv0014
 	go.opentelemetry.io/collector/receiver v0.82.0
@@ -66,7 +66,7 @@ require (
 	go.opentelemetry.io/collector/connector v0.82.0 // indirect
 	go.opentelemetry.io/collector/exporter v0.82.0 // indirect
 	go.opentelemetry.io/collector/extension v0.82.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.0.0-rcv0014 // indirect
+	go.opentelemetry.io/collector/featuregate v1.0.0-rcv0015 // indirect
 	go.opentelemetry.io/collector/processor v0.82.0 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.17.0 // indirect
 	go.opentelemetry.io/otel v1.16.0 // indirect
