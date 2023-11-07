@@ -1140,8 +1140,8 @@ go.opentelemetry.io/collector/receiver v0.85.0 h1:ecDJicAq1mbQcsEkzo1q+6Y2DP8plK
 go.opentelemetry.io/collector/receiver v0.85.0/go.mod h1:6pmub7FpyQIAcCLmijUtelzWD9Jj8Csno7W+3FBQFJo=
 go.opentelemetry.io/collector/receiver/otlpreceiver v0.85.0 h1:RXL/SwHNyEumJrWdtFhygTxX9YUD4hUypUZz2E3K4fM=
 go.opentelemetry.io/collector/receiver/otlpreceiver v0.85.0/go.mod h1:/rGhYQiBUP3Lqw9EdUDYCUtUjgk3splKj51+bOKMSIM=
-go.opentelemetry.io/collector/semconv v0.85.0 h1:TVXgaWeYADXnytlhNq44zyv2W9m3VodBR1ffiMFDusI=
-go.opentelemetry.io/collector/semconv v0.85.0/go.mod h1:j/8THcqVxFna1FpvA2zYIsUperEtOaRaqoLYIN4doWw=
+go.opentelemetry.io/collector/semconv v0.88.0 h1:8TVP4hYaUC87S6CCLKNoSxsUE0ChldE4vqotvNHHUnE=
+go.opentelemetry.io/collector/semconv v0.88.0/go.mod h1:j/8THcqVxFna1FpvA2zYIsUperEtOaRaqoLYIN4doWw=
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.43.0 h1:7XZai4VhA473clBrOqqHdjHBImGfyEtv0qW4nnn/kAo=
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.43.0/go.mod h1:1WpsUwjQrUJSNugfMlPn0rPRJ9Do7wwBgTBPK7MLiS4=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.43.0 h1:HKORGpiOY0R0nAPtKx/ub8/7XoHhRooP8yNRkuPfelI=
