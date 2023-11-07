@@ -13,8 +13,8 @@ require (
 	github.com/stretchr/testify v1.8.4
 	go.mongodb.org/atlas v0.33.0
 	go.opentelemetry.io/collector/component v0.85.0
-	go.opentelemetry.io/collector/config/configopaque v0.85.0
-	go.opentelemetry.io/collector/config/configtls v0.85.0
+	go.opentelemetry.io/collector/config/configopaque v0.88.0
+	go.opentelemetry.io/collector/config/configtls v0.88.0
 	go.opentelemetry.io/collector/confmap v0.85.0
 	go.opentelemetry.io/collector/consumer v0.85.0
 	go.opentelemetry.io/collector/exporter v0.85.0
@@ -60,7 +60,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v0.40.0 // indirect
 	go.opentelemetry.io/otel/trace v1.17.0 // indirect
 	golang.org/x/net v0.15.0 // indirect
-	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	gonum.org/v1/gonum v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
