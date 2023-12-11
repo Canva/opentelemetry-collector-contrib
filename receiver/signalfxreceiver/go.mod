@@ -3,7 +3,7 @@ module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/signal
 go 1.20
 
 require (
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/signalfxexporter v0.85.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.85.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/splunk v0.85.0
