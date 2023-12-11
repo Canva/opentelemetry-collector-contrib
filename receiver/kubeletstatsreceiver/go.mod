@@ -3,7 +3,7 @@ module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubele
 go 1.20
 
 require (
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.85.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/kubelet v0.85.0
 	github.com/stretchr/testify v1.8.4
