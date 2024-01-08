@@ -12,7 +12,7 @@ require (
 	go.opentelemetry.io/collector/component v0.85.0
 	go.opentelemetry.io/collector/config/configtls v0.85.0
 	go.opentelemetry.io/collector/receiver/otlpreceiver v0.85.0
-	golang.org/x/mod v0.12.0
+	golang.org/x/mod v0.14.0
 	golang.org/x/text v0.13.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -668,7 +668,7 @@ require (
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/term v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/tools v0.12.0 // indirect
+	golang.org/x/tools v0.13.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gonum.org/v1/gonum v0.14.0 // indirect
 	google.golang.org/api v0.139.0 // indirect
