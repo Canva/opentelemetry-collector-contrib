@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	cloud.google.com/go/pubsub v1.33.0
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/collector/component v0.85.0
 	go.opentelemetry.io/collector/confmap v0.85.0
