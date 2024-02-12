@@ -23,7 +23,7 @@ require (
 	go.opentelemetry.io/collector/processor v0.85.0
 	go.opentelemetry.io/collector/processor/batchprocessor v0.85.0
 	go.opentelemetry.io/collector/receiver v0.85.0
-	go.opentelemetry.io/collector/semconv v0.85.0
+	go.opentelemetry.io/collector/semconv v0.94.1
 	go.uber.org/zap v1.25.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v2 v2.4.0
