@@ -431,8 +431,8 @@ go.opentelemetry.io/collector/processor v0.85.0 h1:vN3A+E/rm6nCkx9iM+kjlMzXAtE0a
 go.opentelemetry.io/collector/processor v0.85.0/go.mod h1:jp9vOjg9dS13zUy1ma6C4u4hGTdbp2GKb9xp5bX2krc=
 go.opentelemetry.io/collector/receiver v0.85.0 h1:ecDJicAq1mbQcsEkzo1q+6Y2DP8plK51y4p4w7ZhNmA=
 go.opentelemetry.io/collector/receiver v0.85.0/go.mod h1:6pmub7FpyQIAcCLmijUtelzWD9Jj8Csno7W+3FBQFJo=
-go.opentelemetry.io/collector/semconv v0.85.0 h1:TVXgaWeYADXnytlhNq44zyv2W9m3VodBR1ffiMFDusI=
-go.opentelemetry.io/collector/semconv v0.85.0/go.mod h1:j/8THcqVxFna1FpvA2zYIsUperEtOaRaqoLYIN4doWw=
+go.opentelemetry.io/collector/semconv v0.95.0 h1:Oa7NXmoatwKLS+RzuXtdjq9oXAeg8P0g3x238fKF0Do=
+go.opentelemetry.io/collector/semconv v0.95.0/go.mod h1:zOm/U3pgMIWcvrcnPbR9Xx2HinoXj46ERMK8PUV9wrs=
 go.opentelemetry.io/contrib/propagators/b3 v1.17.0 h1:ImOVvHnku8jijXqkwCSyYKRDt2YrnGXD4BbhcpfbfJo=
 go.opentelemetry.io/contrib/propagators/b3 v1.17.0/go.mod h1:IkfUfMpKWmynvvE0264trz0sf32NRTZL4nuAN9AbWRc=
 go.opentelemetry.io/contrib/zpages v0.43.0 h1:3Vp9HDMY/lGe7UY8fDRGmwddCoAb7cACiAL2joIdJh8=
@@ -469,7 +469,7 @@ go.opentelemetry.io/otel/trace v1.17.0/go.mod h1:I/4vKTgFclIsXRVucpH25X0mpFSczM7
 go.opentelemetry.io/proto/otlp v1.0.0 h1:T0TX0tmXU8a3CbNXzEKGeU5mIVOdf0oykP+u2lIVU/I=
 go.opentelemetry.io/proto/otlp v1.0.0/go.mod h1:Sy6pihPLfYHkr3NkUbEhGHFhINUSI/v80hjKIs5JXpM=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
-go.uber.org/goleak v1.2.1 h1:NBol2c7O1ZokfZ0LEU9K6Whx/KnwvepVetCUhtKja4A=
+go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/multierr v1.6.0/go.mod h1:cdWPpRnG4AhwMwsgIHip0KRBQjJy5kYEpYjJxpXp9iU=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
 go.uber.org/multierr v1.11.0/go.mod h1:20+QtiLqy0Nd6FdQB9TLXag12DsQkrbs3htMFfDN80Y=
