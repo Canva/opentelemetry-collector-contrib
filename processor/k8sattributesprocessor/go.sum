@@ -930,6 +930,8 @@ github.com/hashicorp/go-syslog v1.0.0/go.mod h1:qPfqrKkXGihmCqbJM2mZgkZGvKG1dFdv
 github.com/hashicorp/go-uuid v1.0.0/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-uuid v1.0.1/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-version v1.1.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
+github.com/hashicorp/go-version v1.6.0 h1:feTTfFNnjP967rlCxM/I9g701jU+RN74YKx2mOkIeek=
+github.com/hashicorp/go-version v1.6.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
 github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
@@ -1208,8 +1210,8 @@ go.opentelemetry.io/collector/extension v0.85.0 h1:izKozTZ4vOnYdMGhu0ROV69hXCptH
 go.opentelemetry.io/collector/extension v0.85.0/go.mod h1:l5zRPdhtmBjRmPeOhxJsZ/GRIimq4/HIAq/Rgf70W+o=
 go.opentelemetry.io/collector/extension/auth v0.85.0 h1:mMZfNUCeWaXnQY85gepFA9uhzsEf0AAnAE4/Oblx/Wc=
 go.opentelemetry.io/collector/extension/auth v0.85.0/go.mod h1:TBe1YtL27cc7liJFpamMhkmMVOEzR5/ccavvQFlLkAQ=
-go.opentelemetry.io/collector/featuregate v1.0.0-rcv0014 h1:C9o0mbP0MyygqFnKueVQK/v9jef6zvuttmTGlKaqhgw=
-go.opentelemetry.io/collector/featuregate v1.0.0-rcv0014/go.mod h1:0mE3mDLmUrOXVoNsuvj+7dV14h/9HFl/Fy9YTLoLObo=
+go.opentelemetry.io/collector/featuregate v1.2.0 h1:nF8OGq5PsSNSLeuNwTWlOqThxbLW6v6DOCvSqQMc108=
+go.opentelemetry.io/collector/featuregate v1.2.0/go.mod h1:mm8+xyQfgDmqhyegZRNIQmoKsNnDTwWKFLsdMoXAb7A=
 go.opentelemetry.io/collector/pdata v1.0.0-rcv0014 h1:iT5qH0NLmkGeIdDtnBogYDx7L58t6CaWGL378DEo2QY=
 go.opentelemetry.io/collector/pdata v1.0.0-rcv0014/go.mod h1:BRvDrx43kiSoUx3mr7SoA7h9B8+OY99mUK+CZSQFWW4=
 go.opentelemetry.io/collector/processor v0.85.0 h1:vN3A+E/rm6nCkx9iM+kjlMzXAtE0a2vP1JhF9oqLjZQ=
@@ -1239,7 +1241,7 @@ go.opentelemetry.io/proto/otlp v0.7.0/go.mod h1:PqfVotwruBrMGOCsRd/89rSnXhoiJIqe
 go.opentelemetry.io/proto/otlp v0.15.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI405h3+duxN4U=
 go.opentelemetry.io/proto/otlp v0.19.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI405h3+duxN4U=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
-go.uber.org/goleak v1.2.0 h1:xqgm/S+aQvhWFTtR0XK3Jvg7z8kGV8P4X14IzwN3Eqk=
+go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/multierr v1.6.0/go.mod h1:cdWPpRnG4AhwMwsgIHip0KRBQjJy5kYEpYjJxpXp9iU=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
 go.uber.org/multierr v1.11.0/go.mod h1:20+QtiLqy0Nd6FdQB9TLXag12DsQkrbs3htMFfDN80Y=
