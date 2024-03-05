@@ -17,6 +17,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/jaegerremotesampling/internal/jaegerremotesamplingdeprecated"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/jaegerremotesampling/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/common/localhostgate"
 )
 
 // NewFactory creates a factory for the jaeger remote sampling extension.
@@ -35,12 +36,12 @@ func NewFactory() extension.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		HTTPServerSettings: &confighttp.HTTPServerSettings{
-			Endpoint: ":5778",
+		HTTPServerConfig: &confighttp.ServerConfig{
+			Endpoint: localhostgate.EndpointForPort(5778),
 		},
-		GRPCServerSettings: &configgrpc.GRPCServerSettings{
-			NetAddr: confignet.NetAddr{
-				Endpoint:  ":14250",
+		GRPCServerConfig: &configgrpc.ServerConfig{
+			NetAddr: confignet.AddrConfig{
+				Endpoint:  localhostgate.EndpointForPort(14250),
 				Transport: "tcp",
 			},
 		},
@@ -56,14 +57,14 @@ func logDeprecation(logger *zap.Logger) {
 	})
 }
 
-const protoInsteadOfThrift = "extension.jaegerremotesampling.replaceThriftWithProto"
-
+// nolint
 var protoGate = featuregate.GlobalRegistry().MustRegister(
-	protoInsteadOfThrift,
-	featuregate.StageBeta,
+	"extension.jaegerremotesampling.replaceThriftWithProto",
+	featuregate.StageStable,
 	featuregate.WithRegisterDescription(
 		"When enabled, the jaegerremotesampling will use Proto-gen over Thrift-gen.",
 	),
+	featuregate.WithRegisterToVersion("0.92.0"),
 )
 
 func createExtension(_ context.Context, set extension.CreateSettings, cfg component.Config) (extension.Extension, error) {

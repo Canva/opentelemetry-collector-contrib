@@ -1,10 +1,6 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// Skip tests on Windows temporarily, see https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/11451
-//go:build !windows
-// +build !windows
-
 package docsgen
 
 import (
@@ -16,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/otelcol"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/configschema"
@@ -33,7 +30,7 @@ func TestWriteConfigDoc(t *testing.T) {
 		dr,
 		configschema.CfgInfo{
 			Group:       "receiver",
-			Type:        "redis",
+			Type:        component.MustNewType("redis"),
 			CfgInstance: cfg,
 		},
 		func(dir string, bytes []byte, perm os.FileMode) error {

@@ -12,8 +12,8 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/obsreport"
 	"go.opentelemetry.io/collector/receiver"
+	"go.opentelemetry.io/collector/receiver/receiverhelper"
 	"go.uber.org/zap"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,22 +28,18 @@ import (
 
 type k8sobjectsreceiver struct {
 	setting         receiver.CreateSettings
-	objects         []*K8sObjectsConfig
+	config          *Config
 	stopperChanList []chan struct{}
 	client          dynamic.Interface
 	consumer        consumer.Logs
-	obsrecv         *obsreport.Receiver
+	obsrecv         *receiverhelper.ObsReport
 	mu              sync.Mutex
 }
 
 func newReceiver(params receiver.CreateSettings, config *Config, consumer consumer.Logs) (receiver.Logs, error) {
 	transport := "http"
-	client, err := config.getDynamicClient()
-	if err != nil {
-		return nil, err
-	}
 
-	obsrecv, err := obsreport.NewReceiver(obsreport.ReceiverSettings{
+	obsrecv, err := receiverhelper.NewObsReport(receiverhelper.ObsReportSettings{
 		ReceiverID:             params.ID,
 		Transport:              transport,
 		ReceiverCreateSettings: params,
@@ -60,19 +56,23 @@ func newReceiver(params receiver.CreateSettings, config *Config, consumer consum
 	}
 
 	return &k8sobjectsreceiver{
-		client:   client,
 		setting:  params,
 		consumer: consumer,
-		objects:  config.Objects,
+		config:   config,
 		obsrecv:  obsrecv,
 		mu:       sync.Mutex{},
 	}, nil
 }
 
 func (kr *k8sobjectsreceiver) Start(ctx context.Context, _ component.Host) error {
+	client, err := kr.config.getDynamicClient()
+	if err != nil {
+		return err
+	}
+	kr.client = client
 	kr.setting.Logger.Info("Object Receiver started")
 
-	for _, object := range kr.objects {
+	for _, object := range kr.config.Objects {
 		kr.start(ctx, object)
 	}
 	return nil
@@ -139,8 +139,9 @@ func (kr *k8sobjectsreceiver) startPull(ctx context.Context, config *K8sObjectsC
 			} else if len(objects.Items) > 0 {
 				logs := pullObjectsToLogData(objects, time.Now(), config)
 				obsCtx := kr.obsrecv.StartLogsOp(ctx)
+				logRecordCount := logs.LogRecordCount()
 				err = kr.consumer.ConsumeLogs(obsCtx, logs)
-				kr.obsrecv.EndLogsOp(obsCtx, metadata.Type, logs.LogRecordCount(), err)
+				kr.obsrecv.EndLogsOp(obsCtx, metadata.Type.String(), logRecordCount, err)
 			}
 		case <-stopperChan:
 			return
@@ -222,7 +223,7 @@ func (kr *k8sobjectsreceiver) doWatch(ctx context.Context, config *K8sObjectsCon
 			} else {
 				obsCtx := kr.obsrecv.StartLogsOp(ctx)
 				err := kr.consumer.ConsumeLogs(obsCtx, logs)
-				kr.obsrecv.EndLogsOp(obsCtx, metadata.Type, 1, err)
+				kr.obsrecv.EndLogsOp(obsCtx, metadata.Type.String(), 1, err)
 			}
 		case <-stopperChan:
 			watcher.Stop()

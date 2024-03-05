@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"time"
 
 	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/config/configopaque"
@@ -31,9 +32,18 @@ type Config struct {
 	Username                                string                         `mapstructure:"username"`
 	Password                                configopaque.String            `mapstructure:"password"`
 	Databases                               []string                       `mapstructure:"databases"`
-	confignet.NetAddr                       `mapstructure:",squash"`       // provides Endpoint and Transport
+	ExcludeDatabases                        []string                       `mapstructure:"exclude_databases"`
+	confignet.AddrConfig                    `mapstructure:",squash"`       // provides Endpoint and Transport
 	configtls.TLSClientSetting              `mapstructure:"tls,omitempty"` // provides SSL details
+	ConnectionPool                          `mapstructure:"connection_pool,omitempty"`
 	metadata.MetricsBuilderConfig           `mapstructure:",squash"`
+}
+
+type ConnectionPool struct {
+	MaxIdleTime *time.Duration `mapstructure:"max_idle_time,omitempty"`
+	MaxLifetime *time.Duration `mapstructure:"max_lifetime,omitempty"`
+	MaxIdle     *int           `mapstructure:"max_idle,omitempty"`
+	MaxOpen     *int           `mapstructure:"max_open,omitempty"`
 }
 
 func (cfg *Config) Validate() error {
