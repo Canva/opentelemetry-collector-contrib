@@ -8,11 +8,11 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/obsreport"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/receiver"
+	"go.opentelemetry.io/collector/receiver/receiverhelper"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/adapter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer"
@@ -64,7 +64,7 @@ func (f *otlpjsonfilereceiver) Shutdown(_ context.Context) error {
 
 func createLogsReceiver(_ context.Context, settings receiver.CreateSettings, configuration component.Config, logs consumer.Logs) (receiver.Logs, error) {
 	logsUnmarshaler := &plog.JSONUnmarshaler{}
-	obsrecv, err := obsreport.NewReceiver(obsreport.ReceiverSettings{
+	obsrecv, err := receiverhelper.NewObsReport(receiverhelper.ObsReportSettings{
 		ReceiverID:             settings.ID,
 		Transport:              transport,
 		ReceiverCreateSettings: settings,
@@ -78,12 +78,13 @@ func createLogsReceiver(_ context.Context, settings receiver.CreateSettings, con
 		var l plog.Logs
 		l, err = logsUnmarshaler.UnmarshalLogs(token)
 		if err != nil {
-			obsrecv.EndLogsOp(ctx, metadata.Type, 0, err)
+			obsrecv.EndLogsOp(ctx, metadata.Type.String(), 0, err)
 		} else {
-			if l.ResourceLogs().Len() != 0 {
+			logRecordCount := l.LogRecordCount()
+			if logRecordCount != 0 {
 				err = logs.ConsumeLogs(ctx, l)
 			}
-			obsrecv.EndLogsOp(ctx, metadata.Type, l.LogRecordCount(), err)
+			obsrecv.EndLogsOp(ctx, metadata.Type.String(), logRecordCount, err)
 		}
 		return nil
 	})
@@ -96,7 +97,7 @@ func createLogsReceiver(_ context.Context, settings receiver.CreateSettings, con
 
 func createMetricsReceiver(_ context.Context, settings receiver.CreateSettings, configuration component.Config, metrics consumer.Metrics) (receiver.Metrics, error) {
 	metricsUnmarshaler := &pmetric.JSONUnmarshaler{}
-	obsrecv, err := obsreport.NewReceiver(obsreport.ReceiverSettings{
+	obsrecv, err := receiverhelper.NewObsReport(receiverhelper.ObsReportSettings{
 		ReceiverID:             settings.ID,
 		Transport:              transport,
 		ReceiverCreateSettings: settings,
@@ -110,12 +111,12 @@ func createMetricsReceiver(_ context.Context, settings receiver.CreateSettings, 
 		var m pmetric.Metrics
 		m, err = metricsUnmarshaler.UnmarshalMetrics(token)
 		if err != nil {
-			obsrecv.EndMetricsOp(ctx, metadata.Type, 0, err)
+			obsrecv.EndMetricsOp(ctx, metadata.Type.String(), 0, err)
 		} else {
 			if m.ResourceMetrics().Len() != 0 {
 				err = metrics.ConsumeMetrics(ctx, m)
 			}
-			obsrecv.EndMetricsOp(ctx, metadata.Type, m.MetricCount(), err)
+			obsrecv.EndMetricsOp(ctx, metadata.Type.String(), m.MetricCount(), err)
 		}
 		return nil
 	})
@@ -128,7 +129,7 @@ func createMetricsReceiver(_ context.Context, settings receiver.CreateSettings, 
 
 func createTracesReceiver(_ context.Context, settings receiver.CreateSettings, configuration component.Config, traces consumer.Traces) (receiver.Traces, error) {
 	tracesUnmarshaler := &ptrace.JSONUnmarshaler{}
-	obsrecv, err := obsreport.NewReceiver(obsreport.ReceiverSettings{
+	obsrecv, err := receiverhelper.NewObsReport(receiverhelper.ObsReportSettings{
 		ReceiverID:             settings.ID,
 		Transport:              transport,
 		ReceiverCreateSettings: settings,
@@ -142,12 +143,12 @@ func createTracesReceiver(_ context.Context, settings receiver.CreateSettings, c
 		var t ptrace.Traces
 		t, err = tracesUnmarshaler.UnmarshalTraces(token)
 		if err != nil {
-			obsrecv.EndTracesOp(ctx, metadata.Type, 0, err)
+			obsrecv.EndTracesOp(ctx, metadata.Type.String(), 0, err)
 		} else {
 			if t.ResourceSpans().Len() != 0 {
 				err = traces.ConsumeTraces(ctx, t)
 			}
-			obsrecv.EndTracesOp(ctx, metadata.Type, t.SpanCount(), err)
+			obsrecv.EndTracesOp(ctx, metadata.Type.String(), t.SpanCount(), err)
 		}
 		return nil
 	})

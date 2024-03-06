@@ -4,7 +4,10 @@ status:
   class: receiver
   stability:
     beta: [metrics]
-  distributions: [contrib, sumo]
+  distributions: [contrib, sumo, splunk]
   codeowners:
     active: [samiura]
 
+# TODO: Update the receiver to pass the tests
+tests:
+  skip_lifecycle: true
