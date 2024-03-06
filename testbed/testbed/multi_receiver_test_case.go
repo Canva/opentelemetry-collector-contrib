@@ -32,7 +32,7 @@ type MultiReceiverTestCase struct {
 	Sender    DataSender
 	Receivers []DataReceiver
 
-	LoadGenerator *LoadGenerator
+	LoadGenerator *ProviderSender
 	MockBackends  map[DataReceiver]*MockBackend
 	validator     *MultiReceiverTestCaseValidator
 
@@ -102,8 +102,9 @@ func NewMultiReceiverTestCase(
 		tc.resourceSpec.ResourceCheckPeriod = tc.Duration
 	}
 
-	tc.LoadGenerator, err = NewLoadGenerator(dataProvider, sender)
+	lg, err := NewLoadGenerator(dataProvider, sender)
 	require.NoError(t, err, "Cannot create generator")
+	tc.LoadGenerator = lg.(*ProviderSender)
 
 	for _, receiver := range receivers {
 		tc.MockBackends[receiver] = NewMockBackend(tc.composeTestResultFileName("backend.log"), receiver)
@@ -143,20 +144,20 @@ func (tc *MultiReceiverTestCase) StartAgent(args ...string) {
 		}
 	}()
 
-	endpoint := tc.LoadGenerator.sender.GetEndpoint()
+	endpoint := tc.LoadGenerator.Sender.GetEndpoint()
 	if endpoint != nil {
 		// Wait for agent to start. We consider the agent started when we can
 		// connect to the port to which we intend to send load. We only do this
 		// if the endpoint is not-empty, i.e. the sender does use network (some senders
 		// like text log writers don't).
 		tc.WaitFor(func() bool {
-			conn, err := net.Dial(tc.LoadGenerator.sender.GetEndpoint().Network(), tc.LoadGenerator.sender.GetEndpoint().String())
+			conn, err := net.Dial(tc.LoadGenerator.Sender.GetEndpoint().Network(), tc.LoadGenerator.Sender.GetEndpoint().String())
 			if err == nil && conn != nil {
 				conn.Close()
 				return true
 			}
 			return false
-		}, fmt.Sprintf("connection to %s:%s", tc.LoadGenerator.sender.GetEndpoint().Network(), tc.LoadGenerator.sender.GetEndpoint().String()))
+		}, fmt.Sprintf("connection to %s:%s", tc.LoadGenerator.Sender.GetEndpoint().Network(), tc.LoadGenerator.Sender.GetEndpoint().String()))
 	}
 }
 
@@ -322,4 +323,3 @@ func (tc *MultiReceiverTestCase) logStatsOnce() {
 			backend.GetStats())
 	}
 }
-

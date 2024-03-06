@@ -36,14 +36,6 @@ const (
 	defaultThriftBinaryPort  = 6832
 )
 
-var disableJaegerReceiverRemoteSampling = featuregate.GlobalRegistry().MustRegister(
-	"receiver.jaeger.DisableRemoteSampling",
-	featuregate.StageBeta,
-	featuregate.WithRegisterDescription("When enabled, the Jaeger Receiver will fail to start when it is configured with remote_sampling config. When disabled, the receiver will start and the remote_sampling config will be no-op."),
-)
-
-var once sync.Once
-
 func logDeprecation(logger *zap.Logger) {
 	once.Do(func() {
 		logger.Warn("jaeger receiver will deprecate Thrift-gen and replace it with Proto-gen to be compatbible to jaeger 1.42.0 and higher. See https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/18485 for more details.")
@@ -69,28 +61,10 @@ var disableJaegerReceiverRemoteSampling = featuregate.GlobalRegistry().MustRegis
 
 var once sync.Once
 
-func logDeprecation(logger *zap.Logger) {
-	once.Do(func() {
-		logger.Warn("jaeger receiver will deprecate Thrift-gen and replace it with Proto-gen to be compatbible to jaeger 1.42.0 and higher. See https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/18485 for more details.")
-
-	})
-}
-
 const protoInsteadOfThrift = "receiver.jaegerreceiver.replaceThriftWithProto"
-
-var protoGate = featuregate.GlobalRegistry().MustRegister(
-	protoInsteadOfThrift,
-	featuregate.StageBeta,
-	featuregate.WithRegisterDescription(
-		"When enabled, the jaegerreceiver will use Proto-gen over Thrift-gen.",
-	),
-)
 
 // NewFactory creates a new Jaeger receiver factory.
 func NewFactory() receiver.Factory {
-	if !protoGate.IsEnabled() {
-		return jaegerreceiverdeprecated.NewFactory()
-	}
 	return receiver.NewFactory(
 		metadata.Type,
 		createDefaultConfig,
