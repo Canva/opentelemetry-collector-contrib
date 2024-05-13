@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("mysql")
 )
 
+var (
+	Type = component.MustNewType("mysql")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("filter")
 )
 
+var (
+	Type = component.MustNewType("filter")
+)
+
 const (
 	TracesStability  = component.StabilityLevelAlpha
 	MetricsStability = component.StabilityLevelAlpha

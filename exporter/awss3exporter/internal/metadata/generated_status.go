@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("awss3")
 )
 
+var (
+	Type = component.MustNewType("awss3")
+)
+
 const (
 	TracesStability  = component.StabilityLevelAlpha
 	MetricsStability = component.StabilityLevelAlpha

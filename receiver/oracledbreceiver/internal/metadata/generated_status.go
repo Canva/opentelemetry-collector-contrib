@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("oracledb")
 )
 
+var (
+	Type = component.MustNewType("oracledb")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

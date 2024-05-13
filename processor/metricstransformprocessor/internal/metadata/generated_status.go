@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("metricstransform")
 )
 
+var (
+	Type = component.MustNewType("metricstransform")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

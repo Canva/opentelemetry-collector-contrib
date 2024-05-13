@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("awsecscontainermetrics")
 )
 
+var (
+	Type = component.MustNewType("awsecscontainermetrics")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

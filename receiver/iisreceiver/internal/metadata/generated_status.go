@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("iis")
 )
 
+var (
+	Type = component.MustNewType("iis")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

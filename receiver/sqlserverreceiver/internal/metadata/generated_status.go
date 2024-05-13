@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("sqlserver")
 )
 
+var (
+	Type = component.MustNewType("sqlserver")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

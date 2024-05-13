@@ -60,8 +60,8 @@ func TestLoadConfig(t *testing.T) {
 				Traces: configgrpc.ClientConfig{
 					Endpoint:    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 					Compression: configcompression.TypeGzip,
-					TLSSetting: configtls.TLSClientSetting{
-						TLSSetting:         configtls.TLSSetting{},
+					TLSSetting: configtls.ClientConfig{
+						Config:             configtls.Config{},
 						Insecure:           false,
 						InsecureSkipVerify: false,
 						ServerName:         "",
@@ -73,8 +73,8 @@ func TestLoadConfig(t *testing.T) {
 				},
 				ClientConfig: configgrpc.ClientConfig{
 					Endpoint: "https://",
-					TLSSetting: configtls.TLSClientSetting{
-						TLSSetting:         configtls.TLSSetting{},
+					TLSSetting: configtls.ClientConfig{
+						Config:             configtls.Config{},
 						Insecure:           false,
 						InsecureSkipVerify: false,
 						ServerName:         "",
@@ -115,8 +115,8 @@ func TestLoadConfig(t *testing.T) {
 				Traces: configgrpc.ClientConfig{
 					Endpoint:    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 					Compression: configcompression.TypeGzip,
-					TLSSetting: configtls.TLSClientSetting{
-						TLSSetting:         configtls.TLSSetting{},
+					TLSSetting: configtls.ClientConfig{
+						Config:             configtls.Config{},
 						Insecure:           false,
 						InsecureSkipVerify: false,
 						ServerName:         "",
@@ -130,8 +130,8 @@ func TestLoadConfig(t *testing.T) {
 				SubSystemAttributes: []string{"service.name", "k8s.deployment.name", "k8s.statefulset.name", "k8s.daemonset.name", "k8s.cronjob.name", "k8s.job.name", "k8s.container.name"},
 				ClientConfig: configgrpc.ClientConfig{
 					Endpoint: "https://",
-					TLSSetting: configtls.TLSClientSetting{
-						TLSSetting:         configtls.TLSSetting{},
+					TLSSetting: configtls.ClientConfig{
+						Config:             configtls.Config{},
 						Insecure:           false,
 						InsecureSkipVerify: false,
 						ServerName:         "",
@@ -280,31 +280,6 @@ func TestEndpoindsAndDomainWithAllExporters(t *testing.T) {
 	require.NotNil(t, le, "failed to create logs exporter")
 	require.NoError(t, le.start(context.Background(), componenttest.NewNopHost()))
 	assert.NoError(t, le.shutdown(context.Background()))
-}
-
-func TestGetMetadataFromResource(t *testing.T) {
-	r1 := pcommon.NewResource()
-	r1.Attributes().PutStr("k8s.node.name", "node-test")
-	r1.Attributes().PutStr("k8s.container.name", "container-test")
-	r1.Attributes().PutStr("k8s.deployment.name", "deployment-test")
-	r1.Attributes().PutStr("k8s.namespace.name", "namespace-test")
-
-	r2 := pcommon.NewResource()
-	r2.Attributes().PutStr("k8s.node.name", "node-test")
-	r2.Attributes().PutStr("k8s.namespace.name", "namespace-test")
-
-	c := &Config{
-		AppNameAttributes:   []string{"k8s.container.name", "k8s.deployment.name", "k8s.node.name"},
-		SubSystemAttributes: []string{"k8s.namespace.name", "k8s.node.name"},
-	}
-
-	appName, subSystemName := c.getMetadataFromResource(r1)
-	assert.Equal(t, "container-test", appName)
-	assert.Equal(t, "namespace-test", subSystemName)
-
-	appName, subSystemName = c.getMetadataFromResource(r2)
-	assert.Equal(t, "node-test", appName)
-	assert.Equal(t, "namespace-test", subSystemName)
 }
 
 func TestGetMetadataFromResource(t *testing.T) {

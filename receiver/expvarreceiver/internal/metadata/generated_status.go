@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("expvar")
 )
 
+var (
+	Type = component.MustNewType("expvar")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("googlecloudpubsub")
 )
 
+var (
+	Type = component.MustNewType("googlecloudpubsub")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	LogsStability    = component.StabilityLevelBeta

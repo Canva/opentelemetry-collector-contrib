@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("bigip")
 )
 
+var (
+	Type = component.MustNewType("bigip")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

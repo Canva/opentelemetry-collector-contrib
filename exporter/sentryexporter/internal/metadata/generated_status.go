@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("sentry")
 )
 
+var (
+	Type = component.MustNewType("sentry")
+)
+
 const (
 	TracesStability = component.StabilityLevelBeta
 )

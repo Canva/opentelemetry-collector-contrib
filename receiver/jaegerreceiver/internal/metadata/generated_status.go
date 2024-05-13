@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("jaeger")
 )
 
+var (
+	Type = component.MustNewType("jaeger")
+)
+
 const (
 	TracesStability = component.StabilityLevelBeta
 )

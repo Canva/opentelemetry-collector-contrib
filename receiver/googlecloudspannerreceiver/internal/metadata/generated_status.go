@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("googlecloudspanner")
 )
 
+var (
+	Type = component.MustNewType("googlecloudspanner")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

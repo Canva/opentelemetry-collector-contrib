@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("schema")
 )
 
+var (
+	Type = component.MustNewType("schema")
+)
+
 const (
 	TracesStability  = component.StabilityLevelDevelopment
 	MetricsStability = component.StabilityLevelDevelopment

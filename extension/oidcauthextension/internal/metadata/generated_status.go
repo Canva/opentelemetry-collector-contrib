@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("oidc")
 )
 
+var (
+	Type = component.MustNewType("oidc")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

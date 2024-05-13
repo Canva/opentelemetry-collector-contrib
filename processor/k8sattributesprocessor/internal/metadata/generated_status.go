@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("k8sattributes")
 )
 
+var (
+	Type = component.MustNewType("k8sattributes")
+)
+
 const (
 	LogsStability    = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

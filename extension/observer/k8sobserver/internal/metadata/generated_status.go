@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("k8s_observer")
 )
 
+var (
+	Type = component.MustNewType("k8s_observer")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelAlpha
 )

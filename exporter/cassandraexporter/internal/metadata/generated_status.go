@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("cassandra")
 )
 
+var (
+	Type = component.MustNewType("cassandra")
+)
+
 const (
 	TracesStability = component.StabilityLevelAlpha
 	LogsStability   = component.StabilityLevelAlpha

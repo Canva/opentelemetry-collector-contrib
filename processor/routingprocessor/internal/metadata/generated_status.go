@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("routing")
 )
 
+var (
+	Type = component.MustNewType("routing")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

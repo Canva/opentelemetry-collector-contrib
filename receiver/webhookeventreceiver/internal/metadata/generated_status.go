@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("webhookevent")
 )
 
+var (
+	Type = component.MustNewType("webhookevent")
+)
+
 const (
 	LogsStability = component.StabilityLevelAlpha
 )

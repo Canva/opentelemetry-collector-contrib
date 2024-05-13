@@ -1,10 +1,11 @@
 type: db_storage
+scope_name: otelcol/dbstorage
 
 status:
   class: extension
   stability:
     alpha: [extension]
-  distributions: [contrib, sumo]
+  distributions: [contrib]
   codeowners:
     active: [dmitryax, atoulme]
 

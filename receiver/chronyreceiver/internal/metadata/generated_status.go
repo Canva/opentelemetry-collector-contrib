@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("chrony")
 )
 
+var (
+	Type = component.MustNewType("chrony")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

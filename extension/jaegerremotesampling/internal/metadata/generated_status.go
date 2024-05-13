@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("jaegerremotesampling")
 )
 
+var (
+	Type = component.MustNewType("jaegerremotesampling")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelAlpha
 )

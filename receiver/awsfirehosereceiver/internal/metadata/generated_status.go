@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("awsfirehose")
 )
 
+var (
+	Type = component.MustNewType("awsfirehose")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

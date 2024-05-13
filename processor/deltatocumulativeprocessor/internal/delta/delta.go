@@ -8,52 +8,53 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
+	exp "github.com/open-telemetry/opentelemetry-collector-contrib/internal/exp/metrics/streams"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor/internal/data"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor/internal/streams"
 )
 
-func construct[D data.Point[D]]() streams.Aggregator[D] {
-	acc := &Accumulator[D]{dps: make(map[streams.Ident]D)}
-	return &Lock[D]{next: acc}
+func New[D data.Point[D]]() Accumulator[D] {
+	return Accumulator[D]{
+		Map: make(exp.HashMap[D]),
+	}
 }
 
-func Numbers() streams.Aggregator[data.Number] {
-	return construct[data.Number]()
-}
-
-func Histograms() streams.Aggregator[data.Histogram] {
-	return construct[data.Histogram]()
-}
-
-var _ streams.Aggregator[data.Number] = (*Accumulator[data.Number])(nil)
+var _ streams.Map[data.Number] = (*Accumulator[data.Number])(nil)
 
 type Accumulator[D data.Point[D]] struct {
-	dps map[streams.Ident]D
+	streams.Map[D]
 }
 
-// Aggregate implements delta-to-cumulative aggregation as per spec:
-// https://opentelemetry.io/docs/specs/otel/metrics/data-model/#sums-delta-to-cumulative
-func (a *Accumulator[D]) Aggregate(id streams.Ident, dp D) (D, error) {
-	aggr, ok := a.dps[id]
+func (a Accumulator[D]) Store(id streams.Ident, dp D) error {
+	aggr, ok := a.Map.Load(id)
 
 	// new series: initialize with current sample
 	if !ok {
-		a.dps[id] = dp.Clone()
-		return a.dps[id], nil
+		clone := dp.Clone()
+		return a.Map.Store(id, clone)
 	}
 
 	// drop bad samples
 	switch {
 	case dp.StartTimestamp() < aggr.StartTimestamp():
 		// belongs to older series
-		return aggr, ErrOlderStart{Start: aggr.StartTimestamp(), Sample: dp.StartTimestamp()}
+		return ErrOlderStart{Start: aggr.StartTimestamp(), Sample: dp.StartTimestamp()}
 	case dp.Timestamp() <= aggr.Timestamp():
 		// out of order
-		return aggr, ErrOutOfOrder{Last: aggr.Timestamp(), Sample: dp.Timestamp()}
+		return ErrOutOfOrder{Last: aggr.Timestamp(), Sample: dp.Timestamp()}
 	}
 
-	a.dps[id] = aggr.Add(dp)
-	return a.dps[id], nil
+	// detect gaps
+	var gap error
+	if dp.StartTimestamp() > aggr.Timestamp() {
+		gap = ErrGap{From: aggr.Timestamp(), To: dp.StartTimestamp()}
+	}
+
+	res := aggr.Add(dp)
+	if err := a.Map.Store(id, res); err != nil {
+		return err
+	}
+	return gap
 }
 
 type ErrOlderStart struct {
@@ -72,4 +73,12 @@ type ErrOutOfOrder struct {
 
 func (e ErrOutOfOrder) Error() string {
 	return fmt.Sprintf("out of order: dropped sample from time=%s, because series is already at time=%s", e.Sample, e.Last)
+}
+
+type ErrGap struct {
+	From, To pcommon.Timestamp
+}
+
+func (e ErrGap) Error() string {
+	return fmt.Sprintf("gap in stream from %s to %s. samples were likely lost in transit", e.From, e.To)
 }

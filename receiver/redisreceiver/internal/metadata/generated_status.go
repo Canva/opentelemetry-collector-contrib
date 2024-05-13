@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("redis")
 )
 
+var (
+	Type = component.MustNewType("redis")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

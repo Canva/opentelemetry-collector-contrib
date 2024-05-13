@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("memcached")
 )
 
+var (
+	Type = component.MustNewType("memcached")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

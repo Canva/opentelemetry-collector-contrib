@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("purefb")
 )
 
+var (
+	Type = component.MustNewType("purefb")
+)
+
 const (
 	MetricsStability = component.StabilityLevelDevelopment
 )

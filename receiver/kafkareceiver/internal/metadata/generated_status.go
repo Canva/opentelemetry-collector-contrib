@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("kafka")
 )
 
+var (
+	Type = component.MustNewType("kafka")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 	LogsStability    = component.StabilityLevelBeta

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("awsproxy")
 )
 
+var (
+	Type = component.MustNewType("awsproxy")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

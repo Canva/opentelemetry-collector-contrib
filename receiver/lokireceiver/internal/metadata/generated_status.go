@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("loki")
 )
 
+var (
+	Type = component.MustNewType("loki")
+)
+
 const (
 	LogsStability = component.StabilityLevelAlpha
 )

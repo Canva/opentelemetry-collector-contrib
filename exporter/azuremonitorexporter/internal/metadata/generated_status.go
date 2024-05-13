@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("azuremonitor")
 )
 
+var (
+	Type = component.MustNewType("azuremonitor")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

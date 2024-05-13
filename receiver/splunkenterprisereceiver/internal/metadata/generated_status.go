@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("splunkenterprise")
 )
 
+var (
+	Type = component.MustNewType("splunkenterprise")
+)
+
 const (
 	MetricsStability = component.StabilityLevelDevelopment
 )

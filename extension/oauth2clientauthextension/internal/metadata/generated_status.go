@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("oauth2client")
 )
 
+var (
+	Type = component.MustNewType("oauth2client")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

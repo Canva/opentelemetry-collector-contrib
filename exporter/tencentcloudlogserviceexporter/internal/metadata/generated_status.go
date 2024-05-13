@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("tencentcloud_logservice")
 )
 
+var (
+	Type = component.MustNewType("tencentcloud_logservice")
+)
+
 const (
 	LogsStability = component.StabilityLevelBeta
 )

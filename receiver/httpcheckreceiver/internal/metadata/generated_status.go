@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("httpcheck")
 )
 
+var (
+	Type = component.MustNewType("httpcheck")
+)
+
 const (
 	MetricsStability = component.StabilityLevelDevelopment
 )

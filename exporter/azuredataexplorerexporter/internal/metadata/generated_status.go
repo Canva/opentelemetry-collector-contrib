@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("azuredataexplorer")
 )
 
+var (
+	Type = component.MustNewType("azuredataexplorer")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("azureblob")
 )
 
+var (
+	Type = component.MustNewType("azureblob")
+)
+
 const (
 	LogsStability   = component.StabilityLevelDevelopment
 	TracesStability = component.StabilityLevelDevelopment

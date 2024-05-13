@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("opencensus")
 )
 
+var (
+	Type = component.MustNewType("opencensus")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

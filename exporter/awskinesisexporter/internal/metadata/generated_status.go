@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("awskinesis")
 )
 
+var (
+	Type = component.MustNewType("awskinesis")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

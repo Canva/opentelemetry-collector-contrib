@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("apachespark")
 )
 
+var (
+	Type = component.MustNewType("apachespark")
+)
+
 const (
 	MetricsStability = component.StabilityLevelDevelopment
 )

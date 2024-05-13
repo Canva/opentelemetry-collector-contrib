@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("asapclient")
 )
 
+var (
+	Type = component.MustNewType("asapclient")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

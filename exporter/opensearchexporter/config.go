@@ -35,6 +35,20 @@ const (
 	defaultMappingMode = "ss4o"
 )
 
+const (
+	// defaultNamespace value is used as ssoTracesExporter.Namespace when component.Config.Namespace is not set.
+	defaultNamespace = "namespace"
+
+	// defaultDataset value is used as ssoTracesExporter.Dataset when component.Config.Dataset is not set.
+	defaultDataset = "default"
+
+	// defaultBulkAction value is used when component.Config.BulkAction is not set.
+	defaultBulkAction = "create"
+
+	// defaultMappingMode value is used when component.Config.MappingSettings.Mode is not set.
+	defaultMappingMode = "ss4o"
+)
+
 // Config defines configuration for OpenSearch exporter.
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:"http"`

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("file")
 )
 
+var (
+	Type = component.MustNewType("file")
+)
+
 const (
 	TracesStability  = component.StabilityLevelAlpha
 	MetricsStability = component.StabilityLevelAlpha

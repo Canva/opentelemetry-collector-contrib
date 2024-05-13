@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("k8s_events")
 )
 
+var (
+	Type = component.MustNewType("k8s_events")
+)
+
 const (
 	LogsStability = component.StabilityLevelAlpha
 )

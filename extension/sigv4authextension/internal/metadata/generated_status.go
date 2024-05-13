@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("sigv4auth")
 )
 
+var (
+	Type = component.MustNewType("sigv4auth")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

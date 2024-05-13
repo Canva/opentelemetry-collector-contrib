@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("awscloudwatchlogs")
 )
 
+var (
+	Type = component.MustNewType("awscloudwatchlogs")
+)
+
 const (
 	LogsStability = component.StabilityLevelBeta
 )

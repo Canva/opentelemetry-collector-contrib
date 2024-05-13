@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("docker_observer")
 )
 
+var (
+	Type = component.MustNewType("docker_observer")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

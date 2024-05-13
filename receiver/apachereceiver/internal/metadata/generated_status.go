@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("apache")
 )
 
+var (
+	Type = component.MustNewType("apache")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

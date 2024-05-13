@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("riak")
 )
 
+var (
+	Type = component.MustNewType("riak")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

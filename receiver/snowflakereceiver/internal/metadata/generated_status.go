@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("snowflake")
 )
 
+var (
+	Type = component.MustNewType("snowflake")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

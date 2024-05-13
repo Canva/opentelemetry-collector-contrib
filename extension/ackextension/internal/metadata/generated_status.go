@@ -4,22 +4,17 @@ package metadata
 
 import (
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/trace"
 )
 
+<<<<<<<< HEAD:extension/jaegerremotesampling/internal/jaegerremotesamplingdeprecated/internal/metadata/generated_status.go
+const (
+	Type               = "jaegerremotesampling"
+========
 var (
 	Type = component.MustNewType("ack")
 )
 
 const (
-	ExtensionStability = component.StabilityLevelDevelopment
+>>>>>>>> opentelemetry-collector-contrib/release/0.100.x:extension/ackextension/internal/metadata/generated_status.go
+	ExtensionStability = component.StabilityLevelAlpha
 )
-
-func Meter(settings component.TelemetrySettings) metric.Meter {
-	return settings.MeterProvider.Meter("otelcol/ack")
-}
-
-func Tracer(settings component.TelemetrySettings) trace.Tracer {
-	return settings.TracerProvider.Tracer("otelcol/ack")
-}

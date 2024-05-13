@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("db_storage")
 )
 
+var (
+	Type = component.MustNewType("db_storage")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelAlpha
 )

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("ecs_task_observer")
 )
 
+var (
+	Type = component.MustNewType("ecs_task_observer")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

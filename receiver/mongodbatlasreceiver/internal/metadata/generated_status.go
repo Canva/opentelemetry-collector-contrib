@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("mongodbatlas")
 )
 
+var (
+	Type = component.MustNewType("mongodbatlas")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 	LogsStability    = component.StabilityLevelBeta

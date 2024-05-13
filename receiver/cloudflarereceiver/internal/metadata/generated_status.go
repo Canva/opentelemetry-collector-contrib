@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("cloudflare")
 )
 
+var (
+	Type = component.MustNewType("cloudflare")
+)
+
 const (
 	LogsStability = component.StabilityLevelAlpha
 )

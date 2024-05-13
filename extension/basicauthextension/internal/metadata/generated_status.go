@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("basicauth")
 )
 
+var (
+	Type = component.MustNewType("basicauth")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

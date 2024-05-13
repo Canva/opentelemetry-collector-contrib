@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("active_directory_ds")
 )
 
+var (
+	Type = component.MustNewType("active_directory_ds")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

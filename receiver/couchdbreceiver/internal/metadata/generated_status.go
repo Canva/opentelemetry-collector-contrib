@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("couchdb")
 )
 
+var (
+	Type = component.MustNewType("couchdb")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

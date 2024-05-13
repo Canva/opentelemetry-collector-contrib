@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("tail_sampling")
 )
 
+var (
+	Type = component.MustNewType("tail_sampling")
+)
+
 const (
 	TracesStability = component.StabilityLevelBeta
 )

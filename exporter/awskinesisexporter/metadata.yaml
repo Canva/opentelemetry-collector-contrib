@@ -1,10 +1,11 @@
 type: awskinesis
+scope_name: otelcol/awskinesis
 
 status:
   class: exporter
   stability:
     beta: [traces, metrics, logs]
-  distributions: [contrib, observiq]
+  distributions: [contrib]
   codeowners:
     active: [Aneurysm9, MovieStoreGuy]
 

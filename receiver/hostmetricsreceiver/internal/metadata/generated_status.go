@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("hostmetrics")
 )
 
+var (
+	Type = component.MustNewType("hostmetrics")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

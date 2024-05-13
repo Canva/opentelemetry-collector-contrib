@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("googlecloud")
 )
 
+var (
+	Type = component.MustNewType("googlecloud")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("cloudfoundry")
 )
 
+var (
+	Type = component.MustNewType("cloudfoundry")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

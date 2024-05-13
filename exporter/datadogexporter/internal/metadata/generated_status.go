@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("datadog")
 )
 
+var (
+	Type = component.MustNewType("datadog")
+)
+
 const (
 	LogsStability    = component.StabilityLevelAlpha
 	TracesStability  = component.StabilityLevelBeta

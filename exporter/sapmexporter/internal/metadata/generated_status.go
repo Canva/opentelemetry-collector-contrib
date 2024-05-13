@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("sapm")
 )
 
+var (
+	Type = component.MustNewType("sapm")
+)
+
 const (
 	TracesStability = component.StabilityLevelBeta
 )

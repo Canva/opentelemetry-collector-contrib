@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("awsxray")
 )
 
+var (
+	Type = component.MustNewType("awsxray")
+)
+
 const (
 	TracesStability = component.StabilityLevelBeta
 )

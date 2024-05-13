@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("fluentforward")
 )
 
+var (
+	Type = component.MustNewType("fluentforward")
+)
+
 const (
 	LogsStability = component.StabilityLevelBeta
 )

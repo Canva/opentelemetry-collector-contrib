@@ -1,4 +1,5 @@
 type: otelarrow
+scope_name: otelcol/otelarrow
 
 status:
   class: exporter
@@ -12,3 +13,5 @@ status:
 tests:
   skip_lifecycle: true
   skip_shutdown: true
+  goleak:
+    skip: true

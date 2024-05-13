@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("flinkmetrics")
 )
 
+var (
+	Type = component.MustNewType("flinkmetrics")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

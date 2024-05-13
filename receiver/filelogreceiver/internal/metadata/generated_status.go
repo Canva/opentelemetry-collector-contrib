@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("filelog")
 )
 
+var (
+	Type = component.MustNewType("filelog")
+)
+
 const (
 	LogsStability = component.StabilityLevelBeta
 )

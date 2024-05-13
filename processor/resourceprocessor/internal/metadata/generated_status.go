@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("resource")
 )
 
+var (
+	Type = component.MustNewType("resource")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

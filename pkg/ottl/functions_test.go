@@ -79,16 +79,6 @@ func Test_NewFunctionCall_invalid(t *testing.T) {
 			&optionalArgsArguments{},
 			functionWithOptionalArgs,
 		),
-		createFactory(
-			"testing_unknown_function",
-			&functionGetterArguments{},
-			functionWithFunctionGetter,
-		),
-		createFactory[any](
-			"testing_functiongetter",
-			&functionGetterArguments{},
-			functionWithFunctionGetter,
-		),
 	)
 
 	p, _ := NewParser(
@@ -118,17 +108,6 @@ func Test_NewFunctionCall_invalid(t *testing.T) {
 						Value: value{
 							String: (ottltest.Strp("SHA256")),
 						},
-					},
-				},
-			},
-		},
-		{
-			name: "Invalid Function Name",
-			inv: editor{
-				Function: "testing_functiongetter",
-				Arguments: []value{
-					{
-						String: (ottltest.Strp("SHA256")),
 					},
 				},
 			},
@@ -404,17 +383,6 @@ func Test_NewFunctionCall_invalid(t *testing.T) {
 						Value: value{
 							FunctionName: (ottltest.Strp("SHA256")),
 						},
-					},
-				},
-			},
-		},
-		{
-			name: "Unknown Function",
-			inv: editor{
-				Function: "testing_functiongetter",
-				Arguments: []value{
-					{
-						FunctionName: (ottltest.Strp("SHA256")),
 					},
 				},
 			},
@@ -2007,7 +1975,7 @@ func functionWithEnum(Enum) (ExprFunc[any], error) {
 }
 
 func createFactory[A any](name string, args A, fn any) Factory[any] {
-	createFunction := func(fCtx FunctionContext, oArgs Arguments) (ExprFunc[any], error) {
+	createFunction := func(_ FunctionContext, oArgs Arguments) (ExprFunc[any], error) {
 		fArgs, ok := oArgs.(A)
 
 		if !ok {

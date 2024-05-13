@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("syslog")
 )
 
+var (
+	Type = component.MustNewType("syslog")
+)
+
 const (
 	LogsStability = component.StabilityLevelAlpha
 )

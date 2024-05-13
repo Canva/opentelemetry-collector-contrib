@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("vcenter")
 )
 
+var (
+	Type = component.MustNewType("vcenter")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

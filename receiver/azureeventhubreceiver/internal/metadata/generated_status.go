@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("azureeventhub")
 )
 
+var (
+	Type = component.MustNewType("azureeventhub")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 	LogsStability    = component.StabilityLevelAlpha

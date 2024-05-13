@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("awsemf")
 )
 
+var (
+	Type = component.MustNewType("awsemf")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

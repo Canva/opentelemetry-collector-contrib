@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("elasticsearch")
 )
 
+var (
+	Type = component.MustNewType("elasticsearch")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

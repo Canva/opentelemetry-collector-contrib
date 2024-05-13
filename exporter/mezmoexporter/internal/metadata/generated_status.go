@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("mezmo")
 )
 
+var (
+	Type = component.MustNewType("mezmo")
+)
+
 const (
 	LogsStability = component.StabilityLevelBeta
 )

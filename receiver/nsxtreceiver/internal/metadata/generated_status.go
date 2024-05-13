@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("nsxt")
 )
 
+var (
+	Type = component.MustNewType("nsxt")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

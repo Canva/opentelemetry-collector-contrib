@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("groupbytrace")
 )
 
+var (
+	Type = component.MustNewType("groupbytrace")
+)
+
 const (
 	TracesStability = component.StabilityLevelBeta
 )

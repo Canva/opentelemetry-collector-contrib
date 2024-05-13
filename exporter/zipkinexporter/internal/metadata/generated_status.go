@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("zipkin")
 )
 
+var (
+	Type = component.MustNewType("zipkin")
+)
+
 const (
 	TracesStability = component.StabilityLevelBeta
 )

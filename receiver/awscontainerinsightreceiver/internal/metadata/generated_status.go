@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("awscontainerinsightreceiver")
 )
 
+var (
+	Type = component.MustNewType("awscontainerinsightreceiver")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

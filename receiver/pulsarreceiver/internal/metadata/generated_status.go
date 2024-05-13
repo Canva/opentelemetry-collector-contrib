@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("pulsar")
 )
 
+var (
+	Type = component.MustNewType("pulsar")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 	TracesStability  = component.StabilityLevelAlpha

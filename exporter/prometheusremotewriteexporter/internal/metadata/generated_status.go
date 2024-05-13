@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("prometheusremotewrite")
 )
 
+var (
+	Type = component.MustNewType("prometheusremotewrite")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

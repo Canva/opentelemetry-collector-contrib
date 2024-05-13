@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("tcplog")
 )
 
+var (
+	Type = component.MustNewType("tcplog")
+)
+
 const (
 	LogsStability = component.StabilityLevelAlpha
 )

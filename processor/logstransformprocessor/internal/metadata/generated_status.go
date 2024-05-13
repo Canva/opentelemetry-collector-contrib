@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("logstransform")
 )
 
+var (
+	Type = component.MustNewType("logstransform")
+)
+
 const (
 	LogsStability = component.StabilityLevelDevelopment
 )

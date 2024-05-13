@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("pprof")
 )
 
+var (
+	Type = component.MustNewType("pprof")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("servicegraph")
 )
 
+var (
+	Type = component.MustNewType("servicegraph")
+)
+
 const (
 	TracesToMetricsStability = component.StabilityLevelAlpha
 )

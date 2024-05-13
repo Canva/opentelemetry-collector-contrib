@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("docker_stats")
 )
 
+var (
+	Type = component.MustNewType("docker_stats")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

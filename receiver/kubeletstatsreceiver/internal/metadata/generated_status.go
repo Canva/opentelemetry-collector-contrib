@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("kubeletstats")
 )
 
+var (
+	Type = component.MustNewType("kubeletstats")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

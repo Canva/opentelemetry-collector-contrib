@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("clickhouse")
 )
 
+var (
+	Type = component.MustNewType("clickhouse")
+)
+
 const (
 	TracesStability  = component.StabilityLevelAlpha
 	MetricsStability = component.StabilityLevelAlpha

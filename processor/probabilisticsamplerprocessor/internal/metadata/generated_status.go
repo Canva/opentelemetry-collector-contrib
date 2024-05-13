@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("probabilistic_sampler")
 )
 
+var (
+	Type = component.MustNewType("probabilistic_sampler")
+)
+
 const (
 	LogsStability   = component.StabilityLevelAlpha
 	TracesStability = component.StabilityLevelBeta

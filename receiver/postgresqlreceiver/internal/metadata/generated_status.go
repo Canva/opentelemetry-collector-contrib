@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("postgresql")
 )
 
+var (
+	Type = component.MustNewType("postgresql")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

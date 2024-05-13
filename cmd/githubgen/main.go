@@ -93,7 +93,7 @@ type githubData struct {
 }
 
 func loadMetadata(filePath string) (metadata, error) {
-	cp, err := fileprovider.New().Retrieve(context.Background(), "file:"+filePath, nil)
+	cp, err := fileprovider.NewFactory().Create(confmap.ProviderSettings{}).Retrieve(context.Background(), "file:"+filePath, nil)
 	if err != nil {
 		return metadata{}, err
 	}
@@ -117,7 +117,7 @@ func run(folder string, allowlistFilePath string, generators []generator) error 
 	var foldersList []string
 	maxLength := 0
 	allCodeowners := map[string]struct{}{}
-	err := filepath.Walk(folder, func(path string, info fs.FileInfo, err error) error {
+	err := filepath.Walk(folder, func(path string, info fs.FileInfo, _ error) error {
 		if info.Name() == "metadata.yaml" {
 			m, err := loadMetadata(path)
 			if err != nil {
@@ -185,36 +185,4 @@ func run(folder string, allowlistFilePath string, generators []generator) error 
 		}
 	}
 	return nil
-}
-
-func getGithubMembers() (map[string]struct{}, error) {
-	client := github.NewTokenClient(context.Background(), os.Getenv("GITHUB_TOKEN"))
-	var allUsers []*github.User
-	pageIndex := 0
-	for {
-		users, resp, err := client.Organizations.ListMembers(context.Background(), "open-telemetry",
-			&github.ListMembersOptions{
-				PublicOnly: false,
-				ListOptions: github.ListOptions{
-					PerPage: 50,
-					Page:    pageIndex,
-				},
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		if len(users) == 0 {
-			break
-		}
-		allUsers = append(allUsers, users...)
-		pageIndex++
-	}
-
-	usernames := make(map[string]struct{}, len(allUsers))
-	for _, u := range allUsers {
-		usernames[*u.Login] = struct{}{}
-	}
-	return usernames, nil
 }

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("bearertokenauth")
 )
 
+var (
+	Type = component.MustNewType("bearertokenauth")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

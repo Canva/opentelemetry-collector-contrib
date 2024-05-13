@@ -146,7 +146,7 @@ service:
 		Processors: processors,
 	}
 
-	fmp := fileprovider.New()
+	fmp := fileprovider.NewFactory().Create(confmap.ProviderSettings{})
 	configProvider, err := otelcol.NewConfigProvider(
 		otelcol.ConfigProviderSettings{
 			ResolverSettings: confmap.ResolverSettings{

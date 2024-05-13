@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("spanmetrics")
 )
 
+var (
+	Type = component.MustNewType("spanmetrics")
+)
+
 const (
 	TracesToMetricsStability = component.StabilityLevelAlpha
 )

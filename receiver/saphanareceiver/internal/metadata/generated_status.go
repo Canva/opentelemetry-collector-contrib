@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("saphana")
 )
 
+var (
+	Type = component.MustNewType("saphana")
+)
+
 const (
 	MetricsStability = component.StabilityLevelDevelopment
 )

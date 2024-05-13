@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("sumologic")
 )
 
+var (
+	Type = component.MustNewType("sumologic")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 	LogsStability    = component.StabilityLevelBeta

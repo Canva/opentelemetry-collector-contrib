@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("dataset")
 )
 
+var (
+	Type = component.MustNewType("dataset")
+)
+
 const (
 	LogsStability   = component.StabilityLevelAlpha
 	TracesStability = component.StabilityLevelAlpha

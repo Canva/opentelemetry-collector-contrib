@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("snmp")
 )
 
+var (
+	Type = component.MustNewType("snmp")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

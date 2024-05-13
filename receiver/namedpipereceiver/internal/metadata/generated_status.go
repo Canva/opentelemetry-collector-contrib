@@ -9,17 +9,26 @@ import (
 )
 
 var (
+	Type = component.MustNewType("dynatrace")
+)
+
+<<<<<<<< HEAD:exporter/dynatraceexporter/internal/metadata/generated_status.go
+const (
+	MetricsStability = component.StabilityLevelDeprecated
+========
+var (
 	Type = component.MustNewType("namedpipe")
 )
 
 const (
 	LogsStability = component.StabilityLevelAlpha
+>>>>>>>> opentelemetry-collector-contrib/release/0.100.x:receiver/namedpipereceiver/internal/metadata/generated_status.go
 )
 
 func Meter(settings component.TelemetrySettings) metric.Meter {
-	return settings.MeterProvider.Meter("otelcol/namedpipereceiver")
+	return settings.MeterProvider.Meter("otelcol/dynatrace")
 }
 
 func Tracer(settings component.TelemetrySettings) trace.Tracer {
-	return settings.TracerProvider.Tracer("otelcol/namedpipereceiver")
+	return settings.TracerProvider.Tracer("otelcol/dynatrace")
 }

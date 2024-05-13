@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("signalfx")
 )
 
+var (
+	Type = component.MustNewType("signalfx")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

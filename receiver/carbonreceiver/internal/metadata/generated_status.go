@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("carbon")
 )
 
+var (
+	Type = component.MustNewType("carbon")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

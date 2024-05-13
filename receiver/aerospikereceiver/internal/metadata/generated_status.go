@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("aerospike")
 )
 
+var (
+	Type = component.MustNewType("aerospike")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("health_check")
 )
 
+var (
+	Type = component.MustNewType("health_check")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("receiver_creator")
 )
 
+var (
+	Type = component.MustNewType("receiver_creator")
+)
+
 const (
 	LogsStability    = component.StabilityLevelAlpha
 	TracesStability  = component.StabilityLevelAlpha

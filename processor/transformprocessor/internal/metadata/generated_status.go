@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("transform")
 )
 
+var (
+	Type = component.MustNewType("transform")
+)
+
 const (
 	TracesStability  = component.StabilityLevelAlpha
 	MetricsStability = component.StabilityLevelAlpha

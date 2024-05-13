@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("rabbitmq")
 )
 
+var (
+	Type = component.MustNewType("rabbitmq")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

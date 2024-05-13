@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("headers_setter")
 )
 
+var (
+	Type = component.MustNewType("headers_setter")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelAlpha
 )

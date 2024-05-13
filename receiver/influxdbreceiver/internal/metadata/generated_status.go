@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("influxdb")
 )
 
+var (
+	Type = component.MustNewType("influxdb")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

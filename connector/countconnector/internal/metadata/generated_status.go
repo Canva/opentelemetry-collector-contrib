@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("count")
 )
 
+var (
+	Type = component.MustNewType("count")
+)
+
 const (
 	TracesToMetricsStability  = component.StabilityLevelDevelopment
 	MetricsToMetricsStability = component.StabilityLevelDevelopment

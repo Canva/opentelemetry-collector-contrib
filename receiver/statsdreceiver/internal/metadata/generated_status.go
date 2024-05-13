@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("statsd")
 )
 
+var (
+	Type = component.MustNewType("statsd")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

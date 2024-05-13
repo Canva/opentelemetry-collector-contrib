@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("awscloudwatchmetrics")
 )
 
+var (
+	Type = component.MustNewType("awscloudwatchmetrics")
+)
+
 const (
 	MetricsStability = component.StabilityLevelDevelopment
 )

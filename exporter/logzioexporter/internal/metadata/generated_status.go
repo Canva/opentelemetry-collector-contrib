@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("logzio")
 )
 
+var (
+	Type = component.MustNewType("logzio")
+)
+
 const (
 	TracesStability = component.StabilityLevelBeta
 	LogsStability   = component.StabilityLevelBeta

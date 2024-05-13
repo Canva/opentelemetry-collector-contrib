@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("coralogix")
 )
 
+var (
+	Type = component.MustNewType("coralogix")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("nginx")
 )
 
+var (
+	Type = component.MustNewType("nginx")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

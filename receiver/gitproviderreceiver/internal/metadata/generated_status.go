@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("gitprovider")
 )
 
+var (
+	Type = component.MustNewType("gitprovider")
+)
+
 const (
 	MetricsStability = component.StabilityLevelDevelopment
 )

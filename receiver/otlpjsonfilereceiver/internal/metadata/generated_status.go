@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("otlpjsonfile")
 )
 
+var (
+	Type = component.MustNewType("otlpjsonfile")
+)
+
 const (
 	TracesStability  = component.StabilityLevelAlpha
 	MetricsStability = component.StabilityLevelAlpha

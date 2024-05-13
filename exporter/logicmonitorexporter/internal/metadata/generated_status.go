@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("logicmonitor")
 )
 
+var (
+	Type = component.MustNewType("logicmonitor")
+)
+
 const (
 	TracesStability = component.StabilityLevelAlpha
 	LogsStability   = component.StabilityLevelAlpha

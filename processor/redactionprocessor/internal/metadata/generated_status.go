@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("redaction")
 )
 
+var (
+	Type = component.MustNewType("redaction")
+)
+
 const (
 	TracesStability = component.StabilityLevelBeta
 )

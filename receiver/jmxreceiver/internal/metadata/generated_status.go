@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("jmx")
 )
 
+var (
+	Type = component.MustNewType("jmx")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

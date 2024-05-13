@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("journald")
 )
 
+var (
+	Type = component.MustNewType("journald")
+)
+
 const (
 	LogsStability = component.StabilityLevelAlpha
 )

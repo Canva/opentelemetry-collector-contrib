@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("host_observer")
 )
 
+var (
+	Type = component.MustNewType("host_observer")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

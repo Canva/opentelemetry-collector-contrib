@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("file_storage")
 )
 
+var (
+	Type = component.MustNewType("file_storage")
+)
+
 const (
 	ExtensionStability = component.StabilityLevelBeta
 )

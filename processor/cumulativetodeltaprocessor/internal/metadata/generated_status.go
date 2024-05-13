@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("cumulativetodelta")
 )
 
+var (
+	Type = component.MustNewType("cumulativetodelta")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("zookeeper")
 )
 
+var (
+	Type = component.MustNewType("zookeeper")
+)
+
 const (
 	MetricsStability = component.StabilityLevelDevelopment
 )

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("windowseventlog")
 )
 
+var (
+	Type = component.MustNewType("windowseventlog")
+)
+
 const (
 	LogsStability = component.StabilityLevelAlpha
 )

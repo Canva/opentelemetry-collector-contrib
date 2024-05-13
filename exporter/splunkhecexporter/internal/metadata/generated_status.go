@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("splunk_hec")
 )
 
+var (
+	Type = component.MustNewType("splunk_hec")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

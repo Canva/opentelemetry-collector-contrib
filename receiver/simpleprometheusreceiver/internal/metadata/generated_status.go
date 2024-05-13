@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("prometheus_simple")
 )
 
+var (
+	Type = component.MustNewType("prometheus_simple")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

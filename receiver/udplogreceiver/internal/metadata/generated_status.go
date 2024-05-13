@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("udplog")
 )
 
+var (
+	Type = component.MustNewType("udplog")
+)
+
 const (
 	LogsStability = component.StabilityLevelAlpha
 )

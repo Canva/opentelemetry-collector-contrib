@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("experimental_metricsgeneration")
 )
 
+var (
+	Type = component.MustNewType("experimental_metricsgeneration")
+)
+
 const (
 	MetricsStability = component.StabilityLevelDevelopment
 )

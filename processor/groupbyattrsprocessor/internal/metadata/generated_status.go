@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("groupbyattrs")
 )
 
+var (
+	Type = component.MustNewType("groupbyattrs")
+)
+
 const (
 	TracesStability  = component.StabilityLevelBeta
 	MetricsStability = component.StabilityLevelBeta

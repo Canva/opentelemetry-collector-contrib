@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("deltatorate")
 )
 
+var (
+	Type = component.MustNewType("deltatorate")
+)
+
 const (
 	MetricsStability = component.StabilityLevelDevelopment
 )

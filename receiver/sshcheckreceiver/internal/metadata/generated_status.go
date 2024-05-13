@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("sshcheck")
 )
 
+var (
+	Type = component.MustNewType("sshcheck")
+)
+
 const (
 	MetricsStability = component.StabilityLevelAlpha
 )

@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("span")
 )
 
+var (
+	Type = component.MustNewType("span")
+)
+
 const (
 	TracesStability = component.StabilityLevelAlpha
 )

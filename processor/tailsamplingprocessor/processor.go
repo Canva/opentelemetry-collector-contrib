@@ -70,14 +70,6 @@ type spanAndScope struct {
 	instrumentationScope *pcommon.InstrumentationScope
 }
 
-// spanAndScope a structure for holding information about span and its instrumentation scope.
-// required for preserving the instrumentation library information while sampling.
-// We use pointers there to fast find the span in the map.
-type spanAndScope struct {
-	span                 *ptrace.Span
-	instrumentationScope *pcommon.InstrumentationScope
-}
-
 const (
 	sourceFormat = "tail_sampling"
 )
@@ -85,10 +77,6 @@ const (
 // newTracesProcessor returns a processor.TracesProcessor that will perform tail sampling according to the given
 // configuration.
 func newTracesProcessor(ctx context.Context, settings component.TelemetrySettings, nextConsumer consumer.Traces, cfg Config) (processor.Traces, error) {
-	if nextConsumer == nil {
-		return nil, component.ErrNilNextConsumer
-	}
-
 	policyNames := map[string]bool{}
 	policies := make([]*policy, len(cfg.PolicyCfgs))
 	for i := range cfg.PolicyCfgs {

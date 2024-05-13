@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("podman_stats")
 )
 
+var (
+	Type = component.MustNewType("podman_stats")
+)
+
 const (
 	MetricsStability = component.StabilityLevelDevelopment
 )

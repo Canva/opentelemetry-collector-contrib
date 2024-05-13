@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("googlemanagedprometheus")
 )
 
+var (
+	Type = component.MustNewType("googlemanagedprometheus")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )

@@ -14,8 +14,6 @@ body:
       # Start Collector components list
       - cmd/configschema
       - cmd/githubgen
-      - cmd/mdatagen
-      - cmd/mdatagen/internal/samplereceiver
       - cmd/opampsupervisor
       - cmd/otelcontribcol
       - cmd/oteltestbedcol
@@ -26,6 +24,8 @@ body:
       - connector/datadog
       - connector/exceptions
       - connector/failover
+      - connector/grafanacloud
+      - connector/roundrobin
       - connector/routing
       - connector/servicegraph
       - connector/spanmetrics
@@ -45,7 +45,6 @@ body:
       - exporter/coralogix
       - exporter/datadog
       - exporter/dataset
-      - exporter/dynatrace
       - exporter/elasticsearch
       - exporter/file
       - exporter/googlecloud
@@ -67,6 +66,7 @@ body:
       - exporter/prometheus
       - exporter/prometheusremotewrite
       - exporter/pulsar
+      - exporter/rabbitmq
       - exporter/sapm
       - exporter/sentry
       - exporter/signalfx
@@ -82,16 +82,18 @@ body:
       - extension/basicauth
       - extension/bearertokenauth
       - extension/encoding
+      - extension/encoding/avrologencoding
       - extension/encoding/jaegerencoding
       - extension/encoding/jsonlogencoding
       - extension/encoding/otlpencoding
       - extension/encoding/textencoding
       - extension/encoding/zipkinencoding
+      - extension/googleclientauth
       - extension/headerssetter
       - extension/healthcheck
+      - extension/healthcheckv2
       - extension/httpforwarder
       - extension/jaegerremotesampling
-      - extension/jaegerremotesampling/internal/jaegerremotesamplingdeprecated
       - extension/oauth2clientauth
       - extension/observer
       - extension/observer/dockerobserver
@@ -180,6 +182,7 @@ body:
       - receiver/awscontainerinsight
       - receiver/awsecscontainermetrics
       - receiver/awsfirehose
+      - receiver/awss3
       - receiver/awsxray
       - receiver/azureblob
       - receiver/azureeventhub
@@ -208,7 +211,6 @@ body:
       - receiver/iis
       - receiver/influxdb
       - receiver/jaeger
-      - receiver/jaeger/internal/jaegerreceiverdeprecated
       - receiver/jmx
       - receiver/journald
       - receiver/k8scluster

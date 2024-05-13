@@ -12,6 +12,10 @@ var (
 	Type = component.MustNewType("windowsperfcounters")
 )
 
+var (
+	Type = component.MustNewType("windowsperfcounters")
+)
+
 const (
 	MetricsStability = component.StabilityLevelBeta
 )
