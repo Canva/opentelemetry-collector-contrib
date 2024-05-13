@@ -6,15 +6,10 @@ import (
 	"go.opentelemetry.io/collector/component"
 )
 
-<<<<<<<< HEAD:extension/jaegerremotesampling/internal/jaegerremotesamplingdeprecated/internal/metadata/generated_status.go
-const (
-	Type               = "jaegerremotesampling"
-========
 var (
 	Type = component.MustNewType("ack")
 )
 
 const (
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:extension/ackextension/internal/metadata/generated_status.go
 	ExtensionStability = component.StabilityLevelAlpha
 )

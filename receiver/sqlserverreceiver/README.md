@@ -19,8 +19,6 @@ are only available when running on Windows.
 
 Make sure to run the collector as administrator in order to collect all performance counters for metrics. 
 
-Make sure to run the collector as administrator in order to collect all performance counters for metrics. 
-
 ## Configuration
 
 The following settings are optional:

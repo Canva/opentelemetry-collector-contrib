@@ -119,32 +119,6 @@ resourceMetrics:
           - description: The number of database locks.
             gauge:
               dataPoints:
-<<<<<<<< HEAD:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_schemaattr.yaml
-                - asInt: "3600"
-                  attributes:
-                    - key: "relation"
-                      value:
-                        stringValue: "pg_locks"
-                    - key: "mode"
-                      value:
-                        stringValue: "AccessShareLock"
-                    - key: "lock_type"
-                      value:
-                        stringValue: "relation"
-                  startTimeUnixNano: "1000000"
-                  timeUnixNano: "2000000"
-                - asInt: "5600"
-                  attributes:
-                    - key: "relation"
-                      value:
-                        stringValue: "pg_class"
-                    - key: "mode"
-                      value:
-                        stringValue: "AccessShareLock"
-                    - key: "lock_type"
-                      value:
-                        stringValue: "relation"
-========
                 - asInt: "5600"
                   attributes:
                     - key: lock_type
@@ -169,7 +143,6 @@ resourceMetrics:
                     - key: relation
                       value:
                         stringValue: pg_locks
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_imprecise_lag.yaml
                   startTimeUnixNano: "1000000"
                   timeUnixNano: "2000000"
             name: postgresql.database.locks
@@ -382,11 +355,7 @@ resourceMetrics:
                   startTimeUnixNano: "1000000"
                   timeUnixNano: "2000000"
               isMonotonic: true
-<<<<<<<< HEAD:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_schemaattr.yaml
-            unit: '{temp_file}'      
-========
             unit: '{temp_file}'
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_imprecise_lag.yaml
         scope:
           name: otelcol/postgresqlreceiver
           version: latest
@@ -463,11 +432,7 @@ resourceMetrics:
                   startTimeUnixNano: "1000000"
                   timeUnixNano: "2000000"
               isMonotonic: true
-<<<<<<<< HEAD:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_schemaattr.yaml
-            unit: '{temp_file}'  
-========
             unit: '{temp_file}'
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_imprecise_lag.yaml
         scope:
           name: otelcol/postgresqlreceiver
           version: latest
@@ -476,12 +441,9 @@ resourceMetrics:
         - key: postgresql.database.name
           value:
             stringValue: open
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
-            stringValue: table1
+            stringValue: public.table1
     scopeMetrics:
       - metrics:
           - description: The number of blocks read.
@@ -611,11 +573,7 @@ resourceMetrics:
                   startTimeUnixNano: "1000000"
                   timeUnixNano: "2000000"
               isMonotonic: true
-<<<<<<<< HEAD:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_schemaattr.yaml
-            unit: "{sequential_scan}"
-========
             unit: '{sequential_scan}'
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_imprecise_lag.yaml
           - description: Disk space used by a table.
             name: postgresql.table.size
             sum:
@@ -643,12 +601,9 @@ resourceMetrics:
         - key: postgresql.database.name
           value:
             stringValue: open
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
-            stringValue: table2
+            stringValue: public.table2
     scopeMetrics:
       - metrics:
           - description: The number of blocks read.
@@ -778,11 +733,7 @@ resourceMetrics:
                   startTimeUnixNano: "1000000"
                   timeUnixNano: "2000000"
               isMonotonic: true
-<<<<<<<< HEAD:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_schemaattr.yaml
-            unit: "{sequential_scan}"
-========
             unit: '{sequential_scan}'
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_imprecise_lag.yaml
           - description: Disk space used by a table.
             name: postgresql.table.size
             sum:
@@ -810,12 +761,9 @@ resourceMetrics:
         - key: postgresql.database.name
           value:
             stringValue: otel
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
-            stringValue: table1
+            stringValue: public.table1
     scopeMetrics:
       - metrics:
           - description: The number of blocks read.
@@ -945,11 +893,7 @@ resourceMetrics:
                   startTimeUnixNano: "1000000"
                   timeUnixNano: "2000000"
               isMonotonic: true
-<<<<<<<< HEAD:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_schemaattr.yaml
-            unit: "{sequential_scan}"
-========
             unit: '{sequential_scan}'
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_imprecise_lag.yaml
           - description: Disk space used by a table.
             name: postgresql.table.size
             sum:
@@ -977,12 +921,9 @@ resourceMetrics:
         - key: postgresql.database.name
           value:
             stringValue: otel
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
-            stringValue: table2
+            stringValue: public.table2
     scopeMetrics:
       - metrics:
           - description: The number of blocks read.
@@ -1112,11 +1053,7 @@ resourceMetrics:
                   startTimeUnixNano: "1000000"
                   timeUnixNano: "2000000"
               isMonotonic: true
-<<<<<<<< HEAD:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_schemaattr.yaml
-            unit: "{sequential_scan}"
-========
             unit: '{sequential_scan}'
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_imprecise_lag.yaml
           - description: Disk space used by a table.
             name: postgresql.table.size
             sum:
@@ -1144,12 +1081,9 @@ resourceMetrics:
         - key: postgresql.database.name
           value:
             stringValue: telemetry
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
-            stringValue: table1
+            stringValue: public.table1
     scopeMetrics:
       - metrics:
           - description: The number of blocks read.
@@ -1279,11 +1213,7 @@ resourceMetrics:
                   startTimeUnixNano: "1000000"
                   timeUnixNano: "2000000"
               isMonotonic: true
-<<<<<<<< HEAD:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_schemaattr.yaml
-            unit: "{sequential_scan}"
-========
             unit: '{sequential_scan}'
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_imprecise_lag.yaml
           - description: Disk space used by a table.
             name: postgresql.table.size
             sum:
@@ -1311,12 +1241,9 @@ resourceMetrics:
         - key: postgresql.database.name
           value:
             stringValue: telemetry
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
-            stringValue: table2
+            stringValue: public.table2
     scopeMetrics:
       - metrics:
           - description: The number of blocks read.
@@ -1446,11 +1373,7 @@ resourceMetrics:
                   startTimeUnixNano: "1000000"
                   timeUnixNano: "2000000"
               isMonotonic: true
-<<<<<<<< HEAD:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_schemaattr.yaml
-            unit: "{sequential_scan}"
-========
             unit: '{sequential_scan}'
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:receiver/postgresqlreceiver/testdata/scraper/multiple/expected_imprecise_lag.yaml
           - description: Disk space used by a table.
             name: postgresql.table.size
             sum:
@@ -1481,9 +1404,6 @@ resourceMetrics:
         - key: postgresql.index.name
           value:
             stringValue: open_test1_pkey
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
             stringValue: table1
@@ -1518,9 +1438,6 @@ resourceMetrics:
         - key: postgresql.index.name
           value:
             stringValue: open_test2_pkey
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
             stringValue: table2
@@ -1555,9 +1472,6 @@ resourceMetrics:
         - key: postgresql.index.name
           value:
             stringValue: otel_test1_pkey
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
             stringValue: table1
@@ -1592,9 +1506,6 @@ resourceMetrics:
         - key: postgresql.index.name
           value:
             stringValue: otel_test2_pkey
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
             stringValue: table2
@@ -1629,9 +1540,6 @@ resourceMetrics:
         - key: postgresql.index.name
           value:
             stringValue: telemetry_test1_pkey
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
             stringValue: table1
@@ -1666,9 +1574,6 @@ resourceMetrics:
         - key: postgresql.index.name
           value:
             stringValue: telemetry_test2_pkey
-        - key: postgresql.schema.name
-          value:
-            stringValue: public
         - key: postgresql.table.name
           value:
             stringValue: table2

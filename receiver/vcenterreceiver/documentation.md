@@ -346,12 +346,6 @@ As measured over the most recent 20s interval. Requires Performance Level 2.
 | direction | The direction of disk latency. | Str: ``read``, ``write`` |
 | object | The object on the virtual machine or host that is being reported on. | Any Str |
 
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| object | The object on the virtual machine or host that is being reported on. | Any Str |
-
 ### vcenter.vm.disk.usage
 
 The amount of storage space used by the virtual machine.

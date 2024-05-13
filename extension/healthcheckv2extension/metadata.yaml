@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:extension/remotetapextension/metadata.yaml
-type: remotetap
-========
 type: healthcheckv2
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:extension/healthcheckv2extension/metadata.yaml
 
 status:
   class: extension
@@ -10,11 +6,4 @@ status:
     development: [extension]
   distributions: []
   codeowners:
-<<<<<<<< HEAD:extension/remotetapextension/metadata.yaml
-    active: [atoulme]
-
-tests:
-  config:
-========
     active: [jpkrohling, mwear]
->>>>>>>> opentelemetry-collector-contrib/release/0.100.x:extension/healthcheckv2extension/metadata.yaml

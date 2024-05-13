@@ -220,22 +220,6 @@ func (p *Parser[K]) newFunctionCall(ed editor) (Expr[K], error) {
 	return Expr[K]{exprFunc: fn}, err
 }
 
-func getArgumentIndex(index int, args reflect.Value) (int, error) {
-	argsType := args.Type()
-	fieldTag, ok := argsType.Field(index).Tag.Lookup("ottlarg")
-	if !ok {
-		return 0, fmt.Errorf("no `ottlarg` struct tag on Arguments field %q", argsType.Field(index).Name)
-	}
-	argNum, err := strconv.Atoi(fieldTag)
-	if err != nil {
-		return 0, fmt.Errorf("ottlarg struct tag on field %q is not a valid integer: %w", argsType.Field(index).Name, err)
-	}
-	if argNum < 0 || argNum >= args.NumField() {
-		return 0, fmt.Errorf("ottlarg struct tag on field %q has value %d, but must be between 0 and %d", argsType.Field(index).Name, argNum, args.NumField())
-	}
-	return argNum, nil
-}
-
 func (p *Parser[K]) buildArgs(ed editor, argsVal reflect.Value) error {
 	requiredArgs := 0
 	seenNamed := false

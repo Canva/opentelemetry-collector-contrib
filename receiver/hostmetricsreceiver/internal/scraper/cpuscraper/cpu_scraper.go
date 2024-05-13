@@ -100,15 +100,5 @@ func (s *scraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 		}
 	}
 
-	if s.config.MetricsBuilderConfig.Metrics.SystemCPUFrequency.Enabled {
-		cpuInfos, err := s.getCPUInfo()
-		if err != nil {
-			return pmetric.NewMetrics(), scrapererror.NewPartialScrapeError(err, metricsLen)
-		}
-		for _, cInfo := range cpuInfos {
-			s.mb.RecordSystemCPUFrequencyDataPoint(now, cInfo.frequency*hzInAMHz, fmt.Sprintf("cpu%d", cInfo.processor))
-		}
-	}
-
 	return s.mb.Emit(), nil
 }
