@@ -12,15 +12,14 @@ type MultiReceiverTestCaseValidator struct {
 	assertionFailures []*TraceAssertionFailure
 }
 
-
 func NewMultiReceiverTestCaseValidator(
-  senderName string, 
-  provider DataProvider,
-  validator func(tc *MultiReceiverTestCase),
+	senderName string,
+	provider DataProvider,
+	validator func(tc *MultiReceiverTestCase),
 ) *MultiReceiverTestCaseValidator {
 	return &MultiReceiverTestCaseValidator{
 		dataProvider: provider,
-    Validate: validator,
+		Validate:     validator,
 	}
 }
 

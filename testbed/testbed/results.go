@@ -312,7 +312,7 @@ func (r *MultiReceiverTestResults) Init(resultsDir string) {
 			"----------------------------------------------------------------------|------|-------:|------------:|\n")
 }
 
-func (r *MultiReceiverTestResults) Add(_ string, result interface{}) {
+func (r *MultiReceiverTestResults) Add(_ string, result any) {
 	testResult, ok := result.(*MultiReceiverTestResult)
 	if !ok {
 		return
