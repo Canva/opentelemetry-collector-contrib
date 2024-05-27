@@ -13,7 +13,6 @@ type MultiReceiverTestCaseValidator struct {
 }
 
 func NewMultiReceiverTestCaseValidator(
-	senderName string,
 	provider DataProvider,
 	validator func(tc *MultiReceiverTestCase),
 ) *MultiReceiverTestCaseValidator {
