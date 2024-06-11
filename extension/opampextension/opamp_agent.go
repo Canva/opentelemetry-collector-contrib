@@ -24,7 +24,16 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampcustommessages"
 )
+
+const redactedVal = "[REDACTED]"
+
+// Paths that will not have values redacted when reporting the effective config.
+var unredactedPaths = []string{
+	"service::pipelines",
+}
 
 type opampAgent struct {
 	cfg    *Config
@@ -53,7 +62,7 @@ type opampAgent struct {
 	customCapabilityRegistry *customCapabilityRegistry
 }
 
-var _ CustomCapabilityRegistry = (*opampAgent)(nil)
+var _ opampcustommessages.CustomCapabilityRegistry = (*opampAgent)(nil)
 
 func (o *opampAgent) Start(ctx context.Context, _ component.Host) error {
 	header := http.Header{}
@@ -141,7 +150,7 @@ func (o *opampAgent) NotifyConfig(ctx context.Context, conf *confmap.Conf) error
 	return nil
 }
 
-func (o *opampAgent) Register(capability string, opts ...CustomCapabilityRegisterOption) (CustomCapabilityHandler, error) {
+func (o *opampAgent) Register(capability string, opts ...opampcustommessages.CustomCapabilityRegisterOption) (opampcustommessages.CustomCapabilityHandler, error) {
 	return o.customCapabilityRegistry.Register(capability, opts...)
 }
 
@@ -259,6 +268,46 @@ func (o *opampAgent) updateAgentIdentity(instanceID ulid.ULID) {
 	o.instanceID = instanceID
 }
 
+func redactConfig(cfg any, parentPath string) {
+	switch val := cfg.(type) {
+	case map[string]any:
+		for k, v := range val {
+			path := parentPath
+			if path == "" {
+				path = k
+			} else {
+				path += "::" + k
+			}
+			// We don't want to redact certain parts of the config
+			// that are known not to contain secrets, e.g. pipelines.
+			for _, p := range unredactedPaths {
+				if p == path {
+					return
+				}
+			}
+			switch x := v.(type) {
+			case map[string]any:
+				redactConfig(x, path)
+			case []any:
+				redactConfig(x, path)
+			default:
+				val[k] = redactedVal
+			}
+		}
+	case []any:
+		for i, v := range val {
+			switch x := v.(type) {
+			case map[string]any:
+				redactConfig(x, parentPath)
+			case []any:
+				redactConfig(x, parentPath)
+			default:
+				val[i] = redactedVal
+			}
+		}
+	}
+}
+
 func (o *opampAgent) composeEffectiveConfig() *protobufs.EffectiveConfig {
 	o.eclk.RLock()
 	defer o.eclk.RUnlock()
@@ -267,7 +316,9 @@ func (o *opampAgent) composeEffectiveConfig() *protobufs.EffectiveConfig {
 		return nil
 	}
 
-	conf, err := yaml.Marshal(o.effectiveConfig.ToStringMap())
+	m := o.effectiveConfig.ToStringMap()
+	redactConfig(m, "")
+	conf, err := yaml.Marshal(m)
 	if err != nil {
 		o.logger.Error("cannot unmarshal effectiveConfig", zap.Any("conf", o.effectiveConfig), zap.Error(err))
 		return nil
