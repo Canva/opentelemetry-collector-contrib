@@ -38,12 +38,6 @@ type createMetricInfo struct {
 	Val    *json.Number
 }
 
-type createMetricInfo struct {
-	Name   string
-	DsType *string
-	Val    *json.Number
-}
-
 func (cdr *collectDRecord) isEvent() bool {
 	return cdr.Time != nil && cdr.Severity != nil && cdr.Message != nil
 }

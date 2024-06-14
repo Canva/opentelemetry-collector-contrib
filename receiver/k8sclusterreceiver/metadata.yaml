@@ -1,11 +1,12 @@
 type: k8s_cluster
+scope_name: otelcol/k8sclusterreceiver
 
 status:
   class: receiver
   stability:
     beta: [metrics]
     development: [logs]
-  distributions: [contrib, splunk, observiq, sumo, liatrio]
+  distributions: [contrib]
   codeowners:
     active: [dmitryax, TylerHelmuth, povilasv]
 
@@ -192,6 +193,11 @@ resource_attributes:
     type: string
     enabled: true
 
+  k8s.container.status.last_terminated_reason:
+    description: Last terminated reason of a container.
+    type: string
+    enabled: false
+
 attributes:
   k8s.namespace.name:
     description: The k8s namespace name.
@@ -278,12 +284,6 @@ metrics:
     enabled: false
     description: Current status reason of the pod (1 - Evicted, 2 - NodeAffinity, 3 - NodeLost, 4 - Shutdown, 5 - UnexpectedAdmissionError, 6 - Unknown)
     unit: ""
-    gauge:
-      value_type: int
-  k8s.pod.status_reason:
-    enabled: false
-    description: Current status reason of the pod (1 - Evicted, 2 - NodeAffinity, 3 - NodeLost, 4 - Shutdown, 5 - UnexpectedAdmissionError, 6 - Unknown)
-    unit: 1
     gauge:
       value_type: int
 
@@ -520,3 +520,5 @@ metrics:
 tests:
   config:
   skip_lifecycle: true
+  goleak:
+    skip: true

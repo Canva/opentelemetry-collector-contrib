@@ -1,10 +1,11 @@
 type: ack
+scope_name: otelcol/ack
 
 status:
   class: extension
   stability:
-    development: [extension]
-  distributions: [contrib, splunk]
+    alpha: [extension]
+  distributions: [contrib]
   codeowners:
     active: [zpzhuSplunk, splunkericl]
 

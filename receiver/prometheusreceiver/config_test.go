@@ -45,7 +45,6 @@ func TestLoadConfig(t *testing.T) {
 	assert.Equal(t, time.Duration(r1.PrometheusConfig.ScrapeConfigs[0].ScrapeInterval), 5*time.Second)
 	assert.Equal(t, r1.UseStartTimeMetric, true)
 	assert.Equal(t, r1.TrimMetricSuffixes, true)
-	assert.Equal(t, r1.EnableProtobufNegotiation, true)
 	assert.Equal(t, r1.StartTimeMetricRegex, "^(.+_)*process_start_time_seconds$")
 	assert.True(t, r1.ReportExtraScrapeMetrics)
 
@@ -55,6 +54,8 @@ func TestLoadConfig(t *testing.T) {
 	assert.Equal(t, promModel.Duration(60*time.Second), r1.TargetAllocator.HTTPSDConfig.RefreshInterval)
 	assert.Equal(t, "prometheus", r1.TargetAllocator.HTTPSDConfig.HTTPClientConfig.BasicAuth.Username)
 	assert.Equal(t, promConfig.Secret("changeme"), r1.TargetAllocator.HTTPSDConfig.HTTPClientConfig.BasicAuth.Password)
+	assert.Equal(t, "scrape_prometheus", r1.TargetAllocator.HTTPScrapeConfig.BasicAuth.Username)
+	assert.Equal(t, promConfig.Secret("scrape_changeme"), r1.TargetAllocator.HTTPScrapeConfig.BasicAuth.Password)
 }
 
 func TestLoadTargetAllocatorConfig(t *testing.T) {
@@ -71,8 +72,11 @@ func TestLoadTargetAllocatorConfig(t *testing.T) {
 	r0 := cfg.(*Config)
 	assert.NotNil(t, r0.PrometheusConfig)
 	assert.Equal(t, "http://localhost:8080", r0.TargetAllocator.Endpoint)
+	assert.Equal(t, 5*time.Second, r0.TargetAllocator.Timeout)
+	assert.Equal(t, "client.crt", r0.TargetAllocator.TLSSetting.CertFile)
 	assert.Equal(t, 30*time.Second, r0.TargetAllocator.Interval)
 	assert.Equal(t, "collector-1", r0.TargetAllocator.CollectorID)
+	assert.NotNil(t, r0.PrometheusConfig)
 
 	sub, err = cm.Sub(component.NewIDWithName(metadata.Type, "withScrape").String())
 	require.NoError(t, err)
@@ -314,6 +318,17 @@ func TestFileSDConfigYamlNilTargetGroup(t *testing.T) {
 	require.NoError(t, component.ValidateConfig(cfg))
 }
 
+func TestTargetAllocatorInvalidHTTPScrape(t *testing.T) {
+	cm, err := confmaptest.LoadConf(filepath.Join("testdata", "invalid-config-prometheus-target-allocator.yaml"))
+	require.NoError(t, err)
+	factory := NewFactory()
+	cfg := factory.CreateDefaultConfig()
+
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
+	require.NoError(t, err)
+	require.Error(t, component.UnmarshalConfig(sub, cfg))
+}
+
 func TestFileSDConfigWithoutSDFile(t *testing.T) {
 	cm, err := confmaptest.LoadConf(filepath.Join("testdata", "non-existent-prometheus-sd-file-config.yaml"))
 	require.NoError(t, err)
@@ -325,4 +340,35 @@ func TestFileSDConfigWithoutSDFile(t *testing.T) {
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
 
 	require.NoError(t, component.ValidateConfig(cfg))
+}
+
+func TestPromHTTPClientConfigValidateAuthorization(t *testing.T) {
+	cfg := PromHTTPClientConfig{}
+	require.NoError(t, component.ValidateConfig(cfg))
+	cfg.Authorization = &promConfig.Authorization{}
+	require.NoError(t, component.ValidateConfig(cfg))
+	cfg.Authorization.CredentialsFile = "none"
+	require.Error(t, component.ValidateConfig(cfg))
+	cfg.Authorization.CredentialsFile = filepath.Join("testdata", "dummy-tls-cert-file")
+	require.NoError(t, component.ValidateConfig(cfg))
+}
+
+func TestPromHTTPClientConfigValidateTLSConfig(t *testing.T) {
+	cfg := PromHTTPClientConfig{}
+	require.NoError(t, component.ValidateConfig(cfg))
+	cfg.TLSConfig.CertFile = "none"
+	require.Error(t, component.ValidateConfig(cfg))
+	cfg.TLSConfig.CertFile = filepath.Join("testdata", "dummy-tls-cert-file")
+	cfg.TLSConfig.KeyFile = "none"
+	require.Error(t, component.ValidateConfig(cfg))
+	cfg.TLSConfig.KeyFile = filepath.Join("testdata", "dummy-tls-key-file")
+	require.NoError(t, component.ValidateConfig(cfg))
+}
+
+func TestPromHTTPClientConfigValidateMain(t *testing.T) {
+	cfg := PromHTTPClientConfig{}
+	require.NoError(t, component.ValidateConfig(cfg))
+	cfg.BearerToken = "foo"
+	cfg.BearerTokenFile = filepath.Join("testdata", "dummy-tls-key-file")
+	require.Error(t, component.ValidateConfig(cfg))
 }

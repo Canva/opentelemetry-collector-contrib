@@ -9,106 +9,95 @@ import (
 	"compress/gzip"
 	"compress/zlib"
 	"fmt"
-	"io"
-	"sync"
-
-	"go.uber.org/zap"
 )
 
-type bufferedResetWriter interface {
-	Write(p []byte) (int, error)
-	Close() error
-	Reset(newWriter io.Writer)
-}
+type Compressor func(in []byte) ([]byte, error)
 
-type Compressor interface {
-	Do(in []byte) (out []byte, err error)
-}
-
-var _ Compressor = (*compressor)(nil)
-
-type compressor struct {
-	compressionPool sync.Pool
-}
-
-func NewCompressor(format string, log *zap.Logger) (Compressor, error) {
-	var c Compressor
+func NewCompressor(format string) (Compressor, error) {
 	switch format {
 	case "flate":
-		c = &compressor{
-			compressionPool: sync.Pool{
-				New: func() any {
-					w, err := flate.NewWriter(nil, flate.BestSpeed)
-					if err != nil {
-						errMsg := fmt.Sprintf("Unable to instantiate Flate compressor: %v", err)
-						log.Error(errMsg)
-						return nil
-					}
-					return w
-				},
-			},
-		}
+		return flateCompressor, nil
 	case "gzip":
-
-		c = &compressor{
-			compressionPool: sync.Pool{
-				New: func() any {
-					w, err := gzip.NewWriterLevel(nil, gzip.BestSpeed)
-					if err != nil {
-						errMsg := fmt.Sprintf("Unable to instantiate Gzip compressor: %v", err)
-						log.Error(errMsg)
-						return nil
-					}
-					return w
-				},
-			},
-		}
+		return gzipCompressor, nil
 	case "zlib":
-		c = &compressor{
-			compressionPool: sync.Pool{
-				New: func() any {
-					w, err := zlib.NewWriterLevel(nil, zlib.BestSpeed)
-					if err != nil {
-						errMsg := fmt.Sprintf("Unable to instantiate Zlib compressor: %v", err)
-						log.Error(errMsg)
-						return nil
-					}
-					return w
-				},
-			},
-		}
+		return zlibCompressor, nil
 	case "noop", "none":
-		c = &compressor{
-			compressionPool: sync.Pool{
-				New: func() any {
-					return &noop{}
-				},
-			},
-		}
-	default:
-		return nil, fmt.Errorf("unknown compression format: %s", format)
+		return noopCompressor, nil
 	}
 
-	return c, nil
+	return nil, fmt.Errorf("unknown compression format: %s", format)
 }
 
-func (c *compressor) Do(in []byte) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	comp := c.compressionPool.Get().(bufferedResetWriter)
-	if comp == nil {
-		return nil, fmt.Errorf("compressor is nil and did not get instantiated correctly")
-	}
-	defer c.compressionPool.Put(comp)
+func flateCompressor(in []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	w, _ := flate.NewWriter(&buf, flate.BestSpeed)
 
-	comp.Reset(buf)
+	_, err := w.Write(in)
 
-	if _, err := comp.Write(in); err != nil {
+	if err != nil {
 		return nil, err
 	}
 
-	if err := comp.Close(); err != nil {
+	err = w.Flush()
+	if err != nil {
+		return nil, err
+	}
+
+	err = w.Close()
+	if err != nil {
 		return nil, err
 	}
 
 	return buf.Bytes(), nil
+}
+
+func gzipCompressor(in []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	w, _ := gzip.NewWriterLevel(&buf, gzip.BestSpeed)
+
+	_, err := w.Write(in)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = w.Flush()
+	if err != nil {
+
+		return nil, err
+	}
+
+	err = w.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func zlibCompressor(in []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	w, _ := zlib.NewWriterLevel(&buf, zlib.BestSpeed)
+
+	_, err := w.Write(in)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = w.Flush()
+	if err != nil {
+		return nil, err
+	}
+
+	err = w.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func noopCompressor(in []byte) ([]byte, error) {
+	return in, nil
 }

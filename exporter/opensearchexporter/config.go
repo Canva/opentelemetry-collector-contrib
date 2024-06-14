@@ -10,15 +10,6 @@ import (
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
-	"go.uber.org/multierr"
-)
-
-const (
-	// defaultNamespace value is used as ssoTracesExporter.Namespace when component.Config.Namespace is not set.
-	defaultNamespace = "namespace"
-
-	// defaultDataset value is used as ssoTracesExporter.Dataset when component.Config.Dataset is not set.
-	defaultDataset = "default"
 )
 
 const (

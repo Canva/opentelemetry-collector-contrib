@@ -253,9 +253,7 @@ func Test_parse(t *testing.T) {
 							},
 						},
 						{
-							Value: value{
-								FunctionName: (ottltest.Strp("Sha256")),
-							},
+							FunctionName: ottltest.Strp("Sha256"),
 						},
 					},
 				},
@@ -291,118 +289,6 @@ func Test_parse(t *testing.T) {
 							Value: value{
 								Enum: (*enumSymbol)(ottltest.Strp("S")),
 							},
-						},
-					},
-				},
-				WhereClause: nil,
-			},
-		},
-		{
-			name:      "Converter parameters (All Uppercase)",
-			statement: `replace_pattern(attributes["message"], "device=*", attributes["device_name"], SHA256)`,
-			expected: &parsedStatement{
-				Editor: editor{
-					Function: "replace_pattern",
-					Arguments: []value{
-						{
-							Literal: &mathExprLiteral{
-								Path: &Path{
-									Fields: []Field{
-										{
-											Name: "attributes",
-											Keys: []Key{
-												{
-													String: ottltest.Strp("message"),
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-						{
-							String: ottltest.Strp("device=*"),
-						},
-						{
-							Literal: &mathExprLiteral{
-								Path: &Path{
-									Fields: []Field{
-										{
-											Name: "attributes",
-											Keys: []Key{
-												{
-													String: ottltest.Strp("device_name"),
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-						{
-							Enum: (*EnumSymbol)(ottltest.Strp("SHA256")),
-						},
-					},
-				},
-				WhereClause: nil,
-			},
-		},
-		{
-			name:      "Converter parameters",
-			statement: `replace_pattern(attributes["message"], Sha256)`,
-			expected: &parsedStatement{
-				Editor: editor{
-					Function: "replace_pattern",
-					Arguments: []value{
-						{
-							Literal: &mathExprLiteral{
-								Path: &Path{
-									Fields: []Field{
-										{
-											Name: "attributes",
-											Keys: []Key{
-												{
-													String: ottltest.Strp("message"),
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-						{
-							FunctionName: (ottltest.Strp("Sha256")),
-						},
-					},
-				},
-				WhereClause: nil,
-			},
-		},
-		{
-			name:      "Converter parameters (One Uppercase symbol)",
-			statement: `replace_pattern(attributes["message"], S)`,
-			expected: &parsedStatement{
-				Editor: editor{
-					Function: "replace_pattern",
-					Arguments: []value{
-						{
-							Literal: &mathExprLiteral{
-								Path: &Path{
-									Fields: []Field{
-										{
-											Name: "attributes",
-											Keys: []Key{
-												{
-													String: ottltest.Strp("message"),
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-						{
-							Enum: (*EnumSymbol)(ottltest.Strp("S")),
 						},
 					},
 				},
@@ -1353,10 +1239,10 @@ func testParsePath[K any](p Path[K]) (GetSetter[any], error) {
 		}
 
 		return &StandardGetSetter[any]{
-			Getter: func(ctx context.Context, tCtx any) (any, error) {
+			Getter: func(_ context.Context, tCtx any) (any, error) {
 				return tCtx, nil
 			},
-			Setter: func(ctx context.Context, tCtx any, val any) error {
+			Setter: func(_ context.Context, tCtx any, val any) error {
 				reflect.DeepEqual(tCtx, val)
 				return nil
 			},
@@ -1364,14 +1250,14 @@ func testParsePath[K any](p Path[K]) (GetSetter[any], error) {
 	}
 	if p != nil && (p.Name() == "dur1" || p.Name() == "dur2") {
 		return &StandardGetSetter[any]{
-			Getter: func(ctx context.Context, tCtx any) (any, error) {
+			Getter: func(_ context.Context, tCtx any) (any, error) {
 				m, ok := tCtx.(map[string]time.Duration)
 				if !ok {
 					return nil, fmt.Errorf("unable to convert transform context to map of strings to times")
 				}
 				return m[p.Name()], nil
 			},
-			Setter: func(ctx context.Context, tCtx any, val any) error {
+			Setter: func(_ context.Context, tCtx any, val any) error {
 				reflect.DeepEqual(tCtx, val)
 				return nil
 			},
@@ -1379,14 +1265,14 @@ func testParsePath[K any](p Path[K]) (GetSetter[any], error) {
 	}
 	if p != nil && (p.Name() == "time1" || p.Name() == "time2") {
 		return &StandardGetSetter[any]{
-			Getter: func(ctx context.Context, tCtx any) (any, error) {
+			Getter: func(_ context.Context, tCtx any) (any, error) {
 				m, ok := tCtx.(map[string]time.Time)
 				if !ok {
 					return nil, fmt.Errorf("unable to convert transform context to map of strings to times")
 				}
 				return m[p.Name()], nil
 			},
-			Setter: func(ctx context.Context, tCtx any, val any) error {
+			Setter: func(_ context.Context, tCtx any, val any) error {
 				reflect.DeepEqual(tCtx, val)
 				return nil
 			},
@@ -2064,6 +1950,7 @@ func Test_parseCondition(t *testing.T) {
 		{`One() == 1`, false},
 		{`test(fail())`, true},
 		{`Test()`, false},
+		{`"test" == Foo`, true},
 	}
 	pat := regexp.MustCompile("[^a-zA-Z0-9]+")
 	for _, tt := range tests {
@@ -2090,7 +1977,7 @@ func Test_Statement_Execute(t *testing.T) {
 		{
 			name:      "Condition matched",
 			condition: alwaysTrue[any],
-			function: func(ctx context.Context, tCtx any) (any, error) {
+			function: func(_ context.Context, _ any) (any, error) {
 				return 1, nil
 			},
 			expectedCondition: true,
@@ -2099,7 +1986,7 @@ func Test_Statement_Execute(t *testing.T) {
 		{
 			name:      "Condition not matched",
 			condition: alwaysFalse[any],
-			function: func(ctx context.Context, tCtx any) (any, error) {
+			function: func(_ context.Context, _ any) (any, error) {
 				return 1, nil
 			},
 			expectedCondition: false,
@@ -2108,7 +1995,7 @@ func Test_Statement_Execute(t *testing.T) {
 		{
 			name:      "No result",
 			condition: alwaysTrue[any],
-			function: func(ctx context.Context, tCtx any) (any, error) {
+			function: func(_ context.Context, _ any) (any, error) {
 				return nil, nil
 			},
 			expectedCondition: true,
@@ -2172,7 +2059,7 @@ func Test_Statements_Execute_Error(t *testing.T) {
 			condition: func(context.Context, any) (bool, error) {
 				return true, fmt.Errorf("test")
 			},
-			function: func(ctx context.Context, tCtx any) (any, error) {
+			function: func(_ context.Context, _ any) (any, error) {
 				return 1, nil
 			},
 			errorMode: IgnoreError,
@@ -2182,7 +2069,7 @@ func Test_Statements_Execute_Error(t *testing.T) {
 			condition: func(context.Context, any) (bool, error) {
 				return true, fmt.Errorf("test")
 			},
-			function: func(ctx context.Context, tCtx any) (any, error) {
+			function: func(_ context.Context, _ any) (any, error) {
 				return 1, nil
 			},
 			errorMode: PropagateError,
@@ -2192,7 +2079,7 @@ func Test_Statements_Execute_Error(t *testing.T) {
 			condition: func(context.Context, any) (bool, error) {
 				return true, nil
 			},
-			function: func(ctx context.Context, tCtx any) (any, error) {
+			function: func(_ context.Context, _ any) (any, error) {
 				return 1, fmt.Errorf("test")
 			},
 			errorMode: IgnoreError,
@@ -2202,7 +2089,7 @@ func Test_Statements_Execute_Error(t *testing.T) {
 			condition: func(context.Context, any) (bool, error) {
 				return true, nil
 			},
-			function: func(ctx context.Context, tCtx any) (any, error) {
+			function: func(_ context.Context, _ any) (any, error) {
 				return 1, fmt.Errorf("test")
 			},
 			errorMode: PropagateError,
@@ -2212,7 +2099,7 @@ func Test_Statements_Execute_Error(t *testing.T) {
 			condition: func(context.Context, any) (bool, error) {
 				return true, fmt.Errorf("test")
 			},
-			function: func(ctx context.Context, tCtx any) (any, error) {
+			function: func(_ context.Context, _ any) (any, error) {
 				return 1, nil
 			},
 			errorMode: SilentError,
@@ -2222,7 +2109,7 @@ func Test_Statements_Execute_Error(t *testing.T) {
 			condition: func(context.Context, any) (bool, error) {
 				return true, nil
 			},
-			function: func(ctx context.Context, tCtx any) (any, error) {
+			function: func(_ context.Context, _ any) (any, error) {
 				return 1, fmt.Errorf("test")
 			},
 			errorMode: SilentError,

@@ -36,23 +36,6 @@ const (
 	defaultThriftBinaryPort  = 6832
 )
 
-func logDeprecation(logger *zap.Logger) {
-	once.Do(func() {
-		logger.Warn("jaeger receiver will deprecate Thrift-gen and replace it with Proto-gen to be compatbible to jaeger 1.42.0 and higher. See https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/18485 for more details.")
-
-	})
-}
-
-// nolint
-var protoGate = featuregate.GlobalRegistry().MustRegister(
-	"receiver.jaegerreceiver.replaceThriftWithProto",
-	featuregate.StageStable,
-	featuregate.WithRegisterDescription(
-		"When enabled, the jaegerreceiver will use Proto-gen over Thrift-gen.",
-	),
-	featuregate.WithRegisterToVersion("0.92.0"),
-)
-
 var disableJaegerReceiverRemoteSampling = featuregate.GlobalRegistry().MustRegister(
 	"receiver.jaeger.DisableRemoteSampling",
 	featuregate.StageBeta,
@@ -61,7 +44,12 @@ var disableJaegerReceiverRemoteSampling = featuregate.GlobalRegistry().MustRegis
 
 var once sync.Once
 
-const protoInsteadOfThrift = "receiver.jaegerreceiver.replaceThriftWithProto"
+func logDeprecation(logger *zap.Logger) {
+	once.Do(func() {
+		logger.Warn("jaeger receiver will deprecate Thrift-gen and replace it with Proto-gen to be compatbible to jaeger 1.42.0 and higher. See https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/18485 for more details.")
+
+	})
+}
 
 // NewFactory creates a new Jaeger receiver factory.
 func NewFactory() receiver.Factory {
@@ -78,7 +66,7 @@ func createDefaultConfig() component.Config {
 			GRPC: &configgrpc.ServerConfig{
 				NetAddr: confignet.AddrConfig{
 					Endpoint:  localhostgate.EndpointForPort(defaultGRPCPort),
-					Transport: "tcp",
+					Transport: confignet.TransportTypeTCP,
 				},
 			},
 			ThriftHTTP: &confighttp.ServerConfig{
