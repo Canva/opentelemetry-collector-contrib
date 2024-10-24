@@ -19,15 +19,17 @@ const (
 	svcRouting
 	metricNameRouting
 	resourceRouting
+	resourceKeysRouting
 	streamIDRouting
 )
 
 const (
-	svcRoutingStr        = "service"
-	traceIDRoutingStr    = "traceID"
-	metricNameRoutingStr = "metric"
-	resourceRoutingStr   = "resource"
-	streamIDRoutingStr   = "streamID"
+	svcRoutingStr          = "service"
+	traceIDRoutingStr      = "traceID"
+	metricNameRoutingStr   = "metric"
+	resourceRoutingStr     = "resource"
+	resourceKeysRoutingStr = "resource_keys"
+	streamIDRoutingStr     = "streamID"
 )
 
 // Config defines configuration for the exporter.
@@ -36,9 +38,10 @@ type Config struct {
 	configretry.BackOffConfig `mapstructure:"retry_on_failure"`
 	QueueSettings             exporterhelper.QueueConfig `mapstructure:"sending_queue"`
 
-	Protocol   Protocol         `mapstructure:"protocol"`
-	Resolver   ResolverSettings `mapstructure:"resolver"`
-	RoutingKey string           `mapstructure:"routing_key"`
+	Protocol     Protocol         `mapstructure:"protocol"`
+	Resolver     ResolverSettings `mapstructure:"resolver"`
+	RoutingKey   string           `mapstructure:"routing_key"`
+	ResourceKeys []string         `mapstructure:"resource_keys"`
 }
 
 // Protocol holds the individual protocol-specific settings. Only OTLP is supported at the moment.

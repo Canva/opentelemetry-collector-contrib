@@ -28,8 +28,9 @@ var _ exporter.Traces = (*traceExporterImp)(nil)
 type exporterTraces map[*wrappedExporter]ptrace.Traces
 
 type traceExporterImp struct {
-	loadBalancer *loadBalancer
-	routingKey   routingKey
+	loadBalancer        *loadBalancer
+	routingKey          routingKey
+	routingResourceKeys []string
 
 	logger     *zap.Logger
 	stopped    bool
@@ -66,7 +67,11 @@ func newTracesExporter(params exporter.Settings, cfg component.Config) (*traceEx
 
 	switch cfg.(*Config).RoutingKey {
 	case svcRoutingStr:
-		traceExporter.routingKey = svcRouting
+		traceExporter.routingKey = resourceKeysRouting
+		traceExporter.routingResourceKeys = []string{"service.name"}
+	case resourceKeysRoutingStr:
+		traceExporter.routingKey = resourceKeysRouting
+		traceExporter.routingResourceKeys = cfg.(*Config).ResourceKeys
 	case traceIDRoutingStr, "":
 	default:
 		return nil, fmt.Errorf("unsupported routing_key: %s", cfg.(*Config).RoutingKey)
@@ -95,7 +100,7 @@ func (e *traceExporterImp) ConsumeTraces(ctx context.Context, td ptrace.Traces) 
 	exporterSegregatedTraces := make(exporterTraces)
 	endpoints := make(map[*wrappedExporter]string)
 	for _, batch := range batches {
-		routingID, err := routingIdentifiersFromTraces(batch, e.routingKey)
+		routingID, err := e.routingIdentifiersFromTraces(batch)
 		if err != nil {
 			return err
 		}
@@ -137,7 +142,7 @@ func (e *traceExporterImp) ConsumeTraces(ctx context.Context, td ptrace.Traces) 
 	return errs
 }
 
-func routingIdentifiersFromTraces(td ptrace.Traces, key routingKey) (map[string]bool, error) {
+func (e *traceExporterImp) routingIdentifiersFromTraces(td ptrace.Traces) (map[string]bool, error) {
 	ids := make(map[string]bool)
 	rs := td.ResourceSpans()
 	if rs.Len() == 0 {
@@ -154,15 +159,25 @@ func routingIdentifiersFromTraces(td ptrace.Traces, key routingKey) (map[string]
 		return nil, errors.New("empty spans")
 	}
 
-	if key == svcRouting {
+	if e.routingKey == resourceKeysRouting {
+		var missingResourceKey bool
 		for i := 0; i < rs.Len(); i++ {
-			svc, ok := rs.At(i).Resource().Attributes().Get("service.name")
-			if !ok {
-				return nil, errors.New("unable to get service name")
+			var resourceKeyFound bool
+			rsi := rs.At(i)
+			for _, attrKey := range e.routingResourceKeys {
+				if v, ok := rsi.Resource().Attributes().Get(attrKey); ok {
+					ids[v.AsString()] = true
+					resourceKeyFound = true
+					break
+				}
 			}
-			ids[svc.Str()] = true
+			if !resourceKeyFound {
+				missingResourceKey = true
+			}
 		}
-		return ids, nil
+		if !missingResourceKey {
+			return ids, nil
+		}
 	}
 	tid := spans.At(0).TraceID()
 	ids[string(tid[:])] = true
