@@ -13,6 +13,15 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	embeddedtrace "go.opentelemetry.io/otel/trace/embedded"
 	nooptrace "go.opentelemetry.io/otel/trace/noop"
+<<<<<<<< HEAD:processor/logdedupprocessor/internal/metadata/generated_telemetry_test.go
+|||||||| 6b1d3dd2c0c:receiver/otelarrowreceiver/internal/metadata/generated_telemetry_test.go
+
+	"go.opentelemetry.io/collector/component"
+========
+
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/component/componenttest"
+>>>>>>>> v0.137.0:internal/otelarrow/internal/metadata/generated_telemetry_test.go
 )
 
 type mockMeter struct {
@@ -48,28 +57,37 @@ func TestProviders(t *testing.T) {
 
 	meter := Meter(set)
 	if m, ok := meter.(mockMeter); ok {
+<<<<<<<< HEAD:processor/logdedupprocessor/internal/metadata/generated_telemetry_test.go
 		require.Equal(t, "github.com/open-telemetry/opentelemetry-collector-contrib/processor/logdedupprocessor", m.name)
+|||||||| 6b1d3dd2c0c:receiver/otelarrowreceiver/internal/metadata/generated_telemetry_test.go
+		require.Equal(t, "otelcol/otelarrowreceiver", m.name)
+========
+		require.Equal(t, "github.com/open-telemetry/opentelemetry-collector-contrib/internal/otelarrow", m.name)
+>>>>>>>> v0.137.0:internal/otelarrow/internal/metadata/generated_telemetry_test.go
 	} else {
 		require.Fail(t, "returned Meter not mockMeter")
 	}
 
 	tracer := Tracer(set)
 	if m, ok := tracer.(mockTracer); ok {
+<<<<<<<< HEAD:processor/logdedupprocessor/internal/metadata/generated_telemetry_test.go
 		require.Equal(t, "github.com/open-telemetry/opentelemetry-collector-contrib/processor/logdedupprocessor", m.name)
+|||||||| 6b1d3dd2c0c:receiver/otelarrowreceiver/internal/metadata/generated_telemetry_test.go
+		require.Equal(t, "otelcol/otelarrowreceiver", m.name)
+========
+		require.Equal(t, "github.com/open-telemetry/opentelemetry-collector-contrib/internal/otelarrow", m.name)
+>>>>>>>> v0.137.0:internal/otelarrow/internal/metadata/generated_telemetry_test.go
 	} else {
 		require.Fail(t, "returned Meter not mockTracer")
 	}
 }
 
 func TestNewTelemetryBuilder(t *testing.T) {
-	set := component.TelemetrySettings{
-		MeterProvider:  mockMeterProvider{},
-		TracerProvider: mockTracerProvider{},
-	}
+	set := componenttest.NewNopTelemetrySettings()
 	applied := false
-	_, err := NewTelemetryBuilder(set, func(b *TelemetryBuilder) {
+	_, err := NewTelemetryBuilder(set, telemetryBuilderOptionFunc(func(b *TelemetryBuilder) {
 		applied = true
-	})
+	}))
 	require.NoError(t, err)
 	require.True(t, applied)
 }

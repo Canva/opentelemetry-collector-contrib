@@ -13,7 +13,6 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/config/configtelemetry"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exportertest"
 )
@@ -24,7 +23,7 @@ type componentTestTelemetry struct {
 }
 
 func (tt *componentTestTelemetry) NewSettings() exporter.Settings {
-	set := exportertest.NewNopSettings()
+	set := exportertest.NewNopSettings(component.MustNewType("loadbalancing"))
 	set.ID = component.NewID(component.MustNewType("loadbalancing"))
 	set.TelemetrySettings = tt.newTelemetrySettings()
 	return set
@@ -33,7 +32,6 @@ func (tt *componentTestTelemetry) NewSettings() exporter.Settings {
 func (tt *componentTestTelemetry) newTelemetrySettings() component.TelemetrySettings {
 	set := componenttest.NewNopTelemetrySettings()
 	set.MeterProvider = tt.meterProvider
-	set.MetricsLevel = configtelemetry.LevelDetailed
 	return set
 }
 

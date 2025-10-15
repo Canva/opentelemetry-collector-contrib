@@ -7,10 +7,17 @@ import (
 )
 
 var (
+<<<<<<<< HEAD:receiver/opencensusreceiver/internal/metadata/generated_status.go
+	Type      = component.MustNewType("opencensus")
+	ScopeName = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/opencensusreceiver"
+|||||||| 6b1d3dd2c0c:receiver/opencensusreceiver/internal/metadata/generated_status.go
+	Type = component.MustNewType("opencensus")
+========
 	Type      = component.MustNewType("ntp")
 	ScopeName = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ntpreceiver"
+>>>>>>>> v0.137.0:receiver/ntpreceiver/internal/metadata/generated_status.go
 )
 
 const (
-	MetricsStability = component.StabilityLevelAlpha
+	MetricsStability = component.StabilityLevelBeta
 )

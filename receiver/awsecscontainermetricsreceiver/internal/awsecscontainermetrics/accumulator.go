@@ -24,12 +24,12 @@ func (acc *metricDataAccumulator) getMetricsData(containerStatsMap map[string]*C
 	timestamp := pcommon.NewTimestampFromTime(time.Now())
 	taskResource := taskResource(metadata)
 
-	for _, containerMetadata := range metadata.Containers {
+	for i := range metadata.Containers {
+		containerMetadata := &metadata.Containers[i]
 		containerResource := containerResource(containerMetadata, logger)
-		taskResource.Attributes().Range(func(k string, av pcommon.Value) bool {
+		for k, av := range taskResource.Attributes().All() {
 			av.CopyTo(containerResource.Attributes().PutEmpty(k))
-			return true
-		})
+		}
 
 		stats, ok := containerStatsMap[containerMetadata.DockerID]
 
@@ -58,7 +58,7 @@ func isEmptyStats(stats *ContainerStats) bool {
 	return stats == nil || stats.ID == ""
 }
 
-func convertContainerMetrics(stats *ContainerStats, logger *zap.Logger, containerMetadata ecsutil.ContainerMetadata) ECSMetrics {
+func convertContainerMetrics(stats *ContainerStats, logger *zap.Logger, containerMetadata *ecsutil.ContainerMetadata) ECSMetrics {
 	containerMetrics := getContainerMetrics(stats, logger)
 	if containerMetadata.Limits.Memory != nil {
 		containerMetrics.MemoryReserved = *containerMetadata.Limits.Memory

@@ -7,14 +7,16 @@ import (
 	"go.opentelemetry.io/collector/component"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/internal/sampling"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/internal/telemetry"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor/pkg/samplingpolicy"
 )
 
-func getNewCompositePolicy(settings component.TelemetrySettings, config *CompositeCfg) (sampling.PolicyEvaluator, error) {
+func getNewCompositePolicy(settings component.TelemetrySettings, config *CompositeCfg, policyExtensions map[string]samplingpolicy.Extension) (samplingpolicy.Evaluator, error) {
 	subPolicyEvalParams := make([]sampling.SubPolicyEvalParams, len(config.SubPolicyCfg))
 	rateAllocationsMap := getRateAllocationMap(config)
 	for i := range config.SubPolicyCfg {
 		policyCfg := &config.SubPolicyCfg[i]
-		policy, err := getCompositeSubPolicyEvaluator(settings, policyCfg)
+		policy, err := getCompositeSubPolicyEvaluator(settings, policyCfg, policyExtensions)
 		if err != nil {
 			return nil, err
 		}
@@ -22,10 +24,11 @@ func getNewCompositePolicy(settings component.TelemetrySettings, config *Composi
 		evalParams := sampling.SubPolicyEvalParams{
 			Evaluator:         policy,
 			MaxSpansPerSecond: int64(rateAllocationsMap[policyCfg.Name]),
+			Name:              policyCfg.Name,
 		}
 		subPolicyEvalParams[i] = evalParams
 	}
-	return sampling.NewComposite(settings.Logger, config.MaxTotalSpansPerSecond, subPolicyEvalParams, sampling.MonotonicClock{}), nil
+	return sampling.NewComposite(settings.Logger, config.MaxTotalSpansPerSecond, subPolicyEvalParams, sampling.MonotonicClock{}, telemetry.IsRecordPolicyEnabled()), nil
 }
 
 // Apply rate allocations to the sub-policies
@@ -45,11 +48,11 @@ func getRateAllocationMap(config *CompositeCfg) map[string]float64 {
 }
 
 // Return instance of composite sub-policy
-func getCompositeSubPolicyEvaluator(settings component.TelemetrySettings, cfg *CompositeSubPolicyCfg) (sampling.PolicyEvaluator, error) {
+func getCompositeSubPolicyEvaluator(settings component.TelemetrySettings, cfg *CompositeSubPolicyCfg, policyExtensions map[string]samplingpolicy.Extension) (samplingpolicy.Evaluator, error) {
 	switch cfg.Type {
 	case And:
-		return getNewAndPolicy(settings, &cfg.AndCfg)
+		return getNewAndPolicy(settings, &cfg.AndCfg, policyExtensions)
 	default:
-		return getSharedPolicyEvaluator(settings, &cfg.sharedPolicyCfg)
+		return getSharedPolicyEvaluator(settings, &cfg.sharedPolicyCfg, policyExtensions)
 	}
 }

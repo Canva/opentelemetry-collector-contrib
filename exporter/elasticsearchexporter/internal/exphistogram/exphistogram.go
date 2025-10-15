@@ -51,9 +51,7 @@ func ToTDigest(dp pmetric.ExponentialHistogramDataPoint) (counts []int64, values
 	}
 
 	offset = int(dp.Positive().Offset())
-	bucketCounts = dp.Positive().BucketCounts()
-	for i := 0; i < bucketCounts.Len(); i++ {
-		count := bucketCounts.At(i)
+	for i, count := range dp.Positive().BucketCounts().All() {
 		if count == 0 {
 			continue
 		}
@@ -68,7 +66,6 @@ func ToTDigest(dp pmetric.ExponentialHistogramDataPoint) (counts []int64, values
 func safeUint64ToInt64(v uint64) int64 {
 	if v > math.MaxInt64 {
 		return math.MaxInt64
-	} else {
-		return int64(v) // nolint:goset // overflow checked
 	}
+	return int64(v) //nolint:goset // overflow checked
 }

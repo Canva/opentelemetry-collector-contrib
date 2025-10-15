@@ -19,17 +19,17 @@ import (
 
 type MockHostInfo struct{}
 
-func (mi *MockHostInfo) GetInstanceIP() string {
+func (*MockHostInfo) GetInstanceIP() string {
 	return "0.0.0.0"
 }
 
-func (mi *MockHostInfo) GetInstanceIPReadyC() chan bool {
+func (*MockHostInfo) GetInstanceIPReadyC() chan bool {
 	readyC := make(chan bool)
 	return readyC
 }
 
 func TestECSInstanceInfo(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	instanceReadyC := make(chan bool)
 	hostIPProvider := &MockHostInfo{}
@@ -79,6 +79,6 @@ func TestECSInstanceInfo(t *testing.T) {
 
 	assert.NotNil(t, ecsinstanceinfo)
 
-	assert.Equal(t, "", ecsinstanceinfo.GetClusterName())
-	assert.Equal(t, "", ecsinstanceinfo.GetContainerInstanceID())
+	assert.Empty(t, ecsinstanceinfo.GetClusterName())
+	assert.Empty(t, ecsinstanceinfo.GetContainerInstanceID())
 }

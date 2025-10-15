@@ -4,14 +4,11 @@
 package emittest
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/emit"
 )
 
 func TestNop(t *testing.T) {
-	require.NoError(t, Nop(context.Background(), emit.Token{}))
+	require.NoError(t, Nop(t.Context(), [][]byte{}, map[string]any{}, int64(0), []int64{}))
 }

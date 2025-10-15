@@ -48,17 +48,17 @@ type hecSpan struct {
 }
 
 func mapSpanToSplunkEvent(resource pcommon.Resource, span ptrace.Span, config *Config) *splunk.Event {
-	sourceKey := config.HecToOtelAttrs.Source
-	sourceTypeKey := config.HecToOtelAttrs.SourceType
-	indexKey := config.HecToOtelAttrs.Index
-	hostKey := config.HecToOtelAttrs.Host
+	sourceKey := config.OtelAttrsToHec.Source
+	sourceTypeKey := config.OtelAttrsToHec.SourceType
+	indexKey := config.OtelAttrsToHec.Index
+	hostKey := config.OtelAttrsToHec.Host
 
 	host := unknownHostName
 	source := config.Source
 	sourceType := config.SourceType
 	index := config.Index
 	commonFields := map[string]any{}
-	resource.Attributes().Range(func(k string, v pcommon.Value) bool {
+	for k, v := range resource.Attributes().All() {
 		switch k {
 		case hostKey:
 			host = v.Str()
@@ -73,8 +73,7 @@ func mapSpanToSplunkEvent(resource pcommon.Resource, span ptrace.Span, config *C
 		default:
 			commonFields[k] = v.AsString()
 		}
-		return true
-	})
+	}
 
 	se := &splunk.Event{
 		Time:       timestampToSecondsWithMillisecondPrecision(span.StartTimestamp()),

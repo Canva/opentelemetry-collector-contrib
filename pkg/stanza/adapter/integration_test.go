@@ -4,7 +4,6 @@
 package adapter
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/receiverhelper"
 	"go.opentelemetry.io/collector/receiver/receivertest"
-	"go.uber.org/zap"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/helper"
@@ -26,8 +24,6 @@ import (
 
 func createNoopReceiver(nextConsumer consumer.Logs) (*receiver, error) {
 	set := componenttest.NewNopTelemetrySettings()
-	set.Logger = zap.NewNop()
-
 	pipe, err := pipeline.Config{
 		Operators: []operator.Config{
 			{
@@ -42,7 +38,7 @@ func createNoopReceiver(nextConsumer consumer.Logs) (*receiver, error) {
 	receiverID := component.MustNewID("test")
 	obsrecv, err := receiverhelper.NewObsReport(receiverhelper.ObsReportSettings{
 		ReceiverID:             receiverID,
-		ReceiverCreateSettings: receivertest.NewNopSettings(),
+		ReceiverCreateSettings: receivertest.NewNopSettings(receiverID.Type()),
 	})
 	if err != nil {
 		return nil, err
@@ -56,7 +52,7 @@ func createNoopReceiver(nextConsumer consumer.Logs) (*receiver, error) {
 		obsrecv:  obsrecv,
 	}
 
-	emitter := helper.NewLogEmitter(set, rcv.consumeEntries)
+	emitter := helper.NewBatchingLogEmitter(set, rcv.consumeEntries)
 
 	rcv.emitter = emitter
 	return rcv, nil
@@ -76,7 +72,7 @@ func BenchmarkEmitterToConsumer(b *testing.B) {
 	logsReceiver, err := createNoopReceiver(cl)
 	require.NoError(b, err)
 
-	err = logsReceiver.Start(context.Background(), componenttest.NewNopHost())
+	err = logsReceiver.Start(b.Context(), componenttest.NewNopHost())
 	require.NoError(b, err)
 
 	b.ResetTimer()
@@ -85,7 +81,7 @@ func BenchmarkEmitterToConsumer(b *testing.B) {
 		cl.Reset()
 
 		go func() {
-			ctx := context.Background()
+			ctx := b.Context()
 			for _, e := range entries {
 				_ = logsReceiver.emitter.Process(ctx, e)
 			}
@@ -113,7 +109,7 @@ func BenchmarkEmitterToConsumerScopeGroupping(b *testing.B) {
 	logsReceiver, err := createNoopReceiver(cl)
 	require.NoError(b, err)
 
-	err = logsReceiver.Start(context.Background(), componenttest.NewNopHost())
+	err = logsReceiver.Start(b.Context(), componenttest.NewNopHost())
 	require.NoError(b, err)
 
 	b.ResetTimer()
@@ -122,7 +118,7 @@ func BenchmarkEmitterToConsumerScopeGroupping(b *testing.B) {
 		cl.Reset()
 
 		go func() {
-			ctx := context.Background()
+			ctx := b.Context()
 			for _, e := range entries {
 				_ = logsReceiver.emitter.Process(ctx, e)
 			}
@@ -149,15 +145,15 @@ func TestEmitterToConsumer(t *testing.T) {
 	logsReceiver, err := createNoopReceiver(cl)
 	require.NoError(t, err)
 
-	err = logsReceiver.Start(context.Background(), componenttest.NewNopHost())
+	err = logsReceiver.Start(t.Context(), componenttest.NewNopHost())
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, logsReceiver.emitter.Stop())
-		require.NoError(t, logsReceiver.Shutdown(context.Background()))
+		require.NoError(t, logsReceiver.Shutdown(t.Context()))
 	}()
 
 	go func() {
-		ctx := context.Background()
+		ctx := t.Context()
 		for _, e := range entries {
 			assert.NoError(t, logsReceiver.emitter.Process(ctx, e))
 		}

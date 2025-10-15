@@ -20,6 +20,7 @@ import (
 func BenchmarkConvertSimple(b *testing.B) {
 	b.StopTimer()
 	ent := entry.New()
+	b.ReportAllocs()
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -30,6 +31,7 @@ func BenchmarkConvertSimple(b *testing.B) {
 func BenchmarkConvertComplex(b *testing.B) {
 	b.StopTimer()
 	ent := complexEntry()
+	b.ReportAllocs()
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -37,7 +39,7 @@ func BenchmarkConvertComplex(b *testing.B) {
 	}
 }
 
-func complexEntriesForNDifferentHosts(count int, n int) []*entry.Entry {
+func complexEntriesForNDifferentHosts(count, n int) []*entry.Entry {
 	ret := make([]*entry.Entry, count)
 	for i := 0; i < count; i++ {
 		e := entry.New()
@@ -81,7 +83,7 @@ func complexEntriesForNDifferentHosts(count int, n int) []*entry.Entry {
 	return ret
 }
 
-func complexEntriesForNDifferentHostsMDifferentScopes(count int, n int, m int) []*entry.Entry {
+func complexEntriesForNDifferentHostsMDifferentScopes(count, n, m int) []*entry.Entry {
 	ret := make([]*entry.Entry, count)
 	for i := 0; i < count; i++ {
 		for j := 0; j < m; j++ {
@@ -378,8 +380,6 @@ func TestAllConvertedEntriesScopeGrouping(t *testing.T) {
 	}
 
 	for i, tc := range testcases {
-		tc := tc
-
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Parallel()
 
@@ -727,7 +727,7 @@ func TestConvertSeverity(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		t.Run(fmt.Sprintf("%v", tc.severity), func(t *testing.T) {
+		t.Run(tc.severity.String(), func(t *testing.T) {
 			entry := entry.New()
 			entry.Severity = tc.severity
 			entry.SeverityText = tc.severityText
@@ -862,6 +862,10 @@ func BenchmarkGetResourceIDComplexResource(b *testing.B) {
 
 func getResource() map[string]any {
 	return map[string]any{
+		"bool":             true,
+		"int":              123,
+		"double":           12.34,
+		"string":           "hello",
 		"file.name":        "filename.log",
 		"file.directory":   "/some_directory",
 		"host.name":        "localhost",
@@ -962,4 +966,11 @@ func TestGetResourceIDEmptyAndNilAreEqual(t *testing.T) {
 	nilID := HashResource(nil)
 	emptyID := HashResource(map[string]any{})
 	require.Equal(t, nilID, emptyID)
+}
+
+// convert converts one entry.Entry into plog.LogRecord allocating it.
+func convert(ent *entry.Entry) plog.LogRecord {
+	dest := plog.NewLogRecord()
+	convertInto(ent, dest)
+	return dest
 }

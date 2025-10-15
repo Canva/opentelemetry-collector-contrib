@@ -11,17 +11,17 @@ import (
 
 	"github.com/cespare/xxhash/v2"
 	"github.com/prometheus/common/model"
+	"github.com/prometheus/otlptranslator"
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/prometheus/prometheus/prompb"
+	writev2 "github.com/prometheus/prometheus/prompb/io/prometheus/write/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	conventions "go.opentelemetry.io/collector/semconv/v1.25.0"
+	conventions "go.opentelemetry.io/otel/semconv/v1.25.0"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/common/testutil"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/testdata"
-	prometheustranslator "github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus"
 )
 
 func Test_isValidAggregationTemporality(t *testing.T) {
@@ -116,7 +116,7 @@ func TestPrometheusConverter_addSample(t *testing.T) {
 	}
 
 	t.Run("empty_case", func(t *testing.T) {
-		converter := newPrometheusConverter()
+		converter := newPrometheusConverter(Settings{})
 		converter.addSample(nil, nil)
 		assert.Empty(t, converter.unique)
 		assert.Empty(t, converter.conflicts)
@@ -160,7 +160,7 @@ func TestPrometheusConverter_addSample(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			converter := newPrometheusConverter()
+			converter := newPrometheusConverter(Settings{})
 			converter.addSample(&tt.testCase[0].sample, tt.testCase[0].labels)
 			converter.addSample(&tt.testCase[1].sample, tt.testCase[1].labels)
 			assert.Exactly(t, tt.want, converter.unique)
@@ -235,7 +235,7 @@ func Test_timeSeriesSignature(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			exp := calcSig(tt.lbs)
 			sig := timeSeriesSignature(tt.lbs)
-			assert.EqualValues(t, exp, sig)
+			assert.Equal(t, exp, sig)
 		})
 	}
 }
@@ -244,124 +244,161 @@ func Test_timeSeriesSignature(t *testing.T) {
 // collision happens. It does not check whether labels are not sorted
 func Test_createLabelSet(t *testing.T) {
 	tests := []struct {
-		name           string
-		resource       pcommon.Resource
-		orig           pcommon.Map
-		externalLabels map[string]string
-		extras         []string
-		want           []prompb.Label
+		name                        string
+		resource                    pcommon.Resource
+		orig                        pcommon.Map
+		externalLabels              map[string]string
+		extras                      []string
+		want                        []prompb.Label
+		expectErr                   bool
+		underscoreLabelSanitization bool
 	}{
 		{
-			"labels_clean",
-			pcommon.NewResource(),
-			lbs1,
-			map[string]string{},
-			[]string{label31, value31, label32, value32},
-			getPromLabels(label11, value11, label12, value12, label31, value31, label32, value32),
+			name:           "labels_clean",
+			resource:       pcommon.NewResource(),
+			orig:           lbs1,
+			externalLabels: map[string]string{},
+			extras:         []string{label31, value31, label32, value32},
+			want:           getPromLabels(label11, value11, label12, value12, label31, value31, label32, value32),
 		},
 		{
-			"labels_with_resource",
-			func() pcommon.Resource {
+			name: "labels_with_resource",
+			resource: func() pcommon.Resource {
 				res := pcommon.NewResource()
 				res.Attributes().PutStr("service.name", "prometheus")
 				res.Attributes().PutStr("service.instance.id", "127.0.0.1:8080")
 				return res
 			}(),
-			lbs1,
-			map[string]string{},
-			[]string{label31, value31, label32, value32},
-			getPromLabels(label11, value11, label12, value12, label31, value31, label32, value32, "job", "prometheus", "instance", "127.0.0.1:8080"),
+			orig:           lbs1,
+			externalLabels: map[string]string{},
+			extras:         []string{label31, value31, label32, value32},
+			want:           getPromLabels(label11, value11, label12, value12, label31, value31, label32, value32, "job", "prometheus", "instance", "127.0.0.1:8080"),
 		},
 		{
-			"labels_with_nonstring_resource",
-			func() pcommon.Resource {
+			name: "labels_with_nonstring_resource",
+			resource: func() pcommon.Resource {
 				res := pcommon.NewResource()
 				res.Attributes().PutInt("service.name", 12345)
 				res.Attributes().PutBool("service.instance.id", true)
 				return res
 			}(),
-			lbs1,
-			map[string]string{},
-			[]string{label31, value31, label32, value32},
-			getPromLabels(label11, value11, label12, value12, label31, value31, label32, value32, "job", "12345", "instance", "true"),
+			orig:           lbs1,
+			externalLabels: map[string]string{},
+			extras:         []string{label31, value31, label32, value32},
+			want:           getPromLabels(label11, value11, label12, value12, label31, value31, label32, value32, "job", "12345", "instance", "true"),
 		},
 		{
-			"labels_duplicate_in_extras",
-			pcommon.NewResource(),
-			lbs1,
-			map[string]string{},
-			[]string{label11, value31},
-			getPromLabels(label11, value31, label12, value12),
+			name:           "labels_duplicate_in_extras",
+			resource:       pcommon.NewResource(),
+			orig:           lbs1,
+			externalLabels: map[string]string{},
+			extras:         []string{label11, value31},
+			want:           getPromLabels(label11, value31, label12, value12),
 		},
 		{
-			"labels_dirty",
-			pcommon.NewResource(),
-			lbs1Dirty,
-			map[string]string{},
-			[]string{label31 + dirty1, value31, label32, value32},
-			getPromLabels(label11+"_", value11, "key_"+label12, value12, label31+"_", value31, label32, value32),
+			name:           "labels_dirty",
+			resource:       pcommon.NewResource(),
+			orig:           lbs1Dirty,
+			externalLabels: map[string]string{},
+			extras:         []string{label31 + dirty1, value31, label32, value32},
+			want:           getPromLabels(label11+"_", value11, "_"+label12, value12, label31+"_", value31, label32, value32),
 		},
 		{
-			"no_original_case",
-			pcommon.NewResource(),
-			pcommon.NewMap(),
-			nil,
-			[]string{label31, value31, label32, value32},
-			getPromLabels(label31, value31, label32, value32),
+			name:                        "labels_dirty_with_sanitization",
+			resource:                    pcommon.NewResource(),
+			orig:                        lbs1Dirty,
+			externalLabels:              map[string]string{},
+			extras:                      []string{label31 + dirty1, value31, label32, value32},
+			want:                        getPromLabels(label11+"_", value11, "key_"+label12, value12, label31+"_", value31, label32, value32),
+			underscoreLabelSanitization: true,
 		},
 		{
-			"empty_extra_case",
-			pcommon.NewResource(),
-			lbs1,
-			map[string]string{},
-			[]string{"", ""},
-			getPromLabels(label11, value11, label12, value12, "", ""),
+			name:           "no_original_case",
+			resource:       pcommon.NewResource(),
+			orig:           pcommon.NewMap(),
+			externalLabels: map[string]string{},
+			extras:         []string{label31, value31, label32, value32},
+			want:           getPromLabels(label31, value31, label32, value32),
 		},
 		{
-			"single_left_over_case",
-			pcommon.NewResource(),
-			lbs1,
-			map[string]string{},
-			[]string{label31, value31, label32},
-			getPromLabels(label11, value11, label12, value12, label31, value31),
+			name:           "empty_extra_case",
+			resource:       pcommon.NewResource(),
+			orig:           lbs1,
+			externalLabels: map[string]string{},
+			extras:         []string{"", ""},
+			want:           getPromLabels(label11, value11, label12, value12, "", ""),
+			expectErr:      true,
 		},
 		{
-			"valid_external_labels",
-			pcommon.NewResource(),
-			lbs1,
-			exlbs1,
-			[]string{label31, value31, label32, value32},
-			getPromLabels(label11, value11, label12, value12, label41, value41, label31, value31, label32, value32),
+			name:           "single_left_over_case",
+			resource:       pcommon.NewResource(),
+			orig:           lbs1,
+			externalLabels: map[string]string{},
+			extras:         []string{label31, value31, label32},
+			want:           getPromLabels(label11, value11, label12, value12, label31, value31),
 		},
 		{
-			"overwritten_external_labels",
-			pcommon.NewResource(),
-			lbs1,
-			exlbs2,
-			[]string{label31, value31, label32, value32},
-			getPromLabels(label11, value11, label12, value12, label31, value31, label32, value32),
+			name:           "valid_external_labels",
+			resource:       pcommon.NewResource(),
+			orig:           lbs1,
+			externalLabels: exlbs1,
+			extras:         []string{label31, value31, label32, value32},
+			want:           getPromLabels(label11, value11, label12, value12, label41, value41, label31, value31, label32, value32),
 		},
 		{
-			"colliding attributes",
-			pcommon.NewResource(),
-			lbsColliding,
-			nil,
-			[]string{label31, value31, label32, value32},
-			getPromLabels(collidingSanitized, value11+";"+value12, label31, value31, label32, value32),
+			name:           "overwritten_external_labels",
+			resource:       pcommon.NewResource(),
+			orig:           lbs1,
+			externalLabels: exlbs2,
+			extras:         []string{label31, value31, label32, value32},
+			want:           getPromLabels(label11, value11, label12, value12, label31, value31, label32, value32),
 		},
 		{
-			"sanitize_labels_starts_with_underscore",
-			pcommon.NewResource(),
-			lbs3,
-			exlbs1,
-			[]string{label31, value31, label32, value32},
-			getPromLabels(label11, value11, label12, value12, "key"+label51, value51, label41, value41, label31, value31, label32, value32),
+			name:           "colliding attributes",
+			resource:       pcommon.NewResource(),
+			orig:           lbsColliding,
+			externalLabels: nil,
+			extras:         []string{label31, value31, label32, value32},
+			want:           getPromLabels(collidingSanitized, value11+";"+value12, label31, value31, label32, value32),
+		},
+		{
+			name:           "existing_attribute_value_is_the_same_as_the_new_label_value",
+			resource:       pcommon.NewResource(),
+			orig:           lbsCollidingSameValue,
+			externalLabels: nil,
+			extras:         []string{label31, value31, label32, value32},
+			want:           getPromLabels(collidingSanitized, value11, label31, value31, label32, value32),
+		},
+		{
+			name:           "sanitize_labels_starts_with_underscore",
+			resource:       pcommon.NewResource(),
+			orig:           lbs3,
+			externalLabels: exlbs1,
+			extras:         []string{label31, value31, label32, value32},
+			want:           getPromLabels(label11, value11, label12, value12, label51, value51, label41, value41, label31, value31, label32, value32),
+		},
+		{
+			name:                        "sanitize_labels_starts_with_underscore_with_sanitization",
+			resource:                    pcommon.NewResource(),
+			orig:                        lbs3,
+			externalLabels:              exlbs1,
+			extras:                      []string{label31, value31, label32, value32},
+			want:                        getPromLabels(label11, value11, label12, value12, "key"+label51, value51, label41, value41, label31, value31, label32, value32),
+			underscoreLabelSanitization: true,
 		},
 	}
-	// run tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.ElementsMatch(t, tt.want, createAttributes(tt.resource, tt.orig, tt.externalLabels, nil, true, tt.extras...))
+			labelNamer := otlptranslator.LabelNamer{
+				UnderscoreLabelSanitization: tt.underscoreLabelSanitization,
+			}
+			got, err := createAttributes(tt.resource, tt.orig, tt.externalLabels, nil, true, labelNamer, tt.extras...)
+			if tt.expectErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.ElementsMatch(t, tt.want, got)
 		})
 	}
 }
@@ -379,7 +416,8 @@ func BenchmarkCreateAttributes(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		createAttributes(r, m, ext, nil, true)
+		//nolint:errcheck
+		createAttributes(r, m, ext, nil, true, otlptranslator.LabelNamer{})
 	}
 }
 
@@ -464,7 +502,7 @@ func Test_getPromExemplars(t *testing.T) {
 				{
 					Value:     floatVal1,
 					Timestamp: timestamp.FromTime(tnow),
-					Labels:    []prompb.Label{getLabel(prometheustranslator.ExemplarTraceIDKey, traceIDValue1), getLabel(prometheustranslator.ExemplarSpanIDKey, spanIDValue1), getLabel(label11, value11)},
+					Labels:    []prompb.Label{getLabel(otlptranslator.ExemplarTraceIDKey, traceIDValue1), getLabel(otlptranslator.ExemplarSpanIDKey, spanIDValue1), getLabel(label11, value11)},
 				},
 			},
 		},
@@ -486,7 +524,7 @@ func Test_getPromExemplars(t *testing.T) {
 				{
 					Value:     float64(intVal2),
 					Timestamp: timestamp.FromTime(tnow),
-					Labels:    []prompb.Label{getLabel(prometheustranslator.ExemplarTraceIDKey, traceIDValue1), getLabel(prometheustranslator.ExemplarSpanIDKey, spanIDValue1), getLabel(label11, value11)},
+					Labels:    []prompb.Label{getLabel(otlptranslator.ExemplarTraceIDKey, traceIDValue1), getLabel(otlptranslator.ExemplarSpanIDKey, spanIDValue1), getLabel(label11, value11)},
 				},
 			},
 		},
@@ -518,7 +556,7 @@ func Test_getPromExemplars(t *testing.T) {
 				{
 					Value:     floatVal1,
 					Timestamp: timestamp.FromTime(tnow),
-					Labels:    []prompb.Label{getLabel(prometheustranslator.ExemplarTraceIDKey, traceIDValue1), getLabel(prometheustranslator.ExemplarSpanIDKey, spanIDValue1)},
+					Labels:    []prompb.Label{getLabel(otlptranslator.ExemplarTraceIDKey, traceIDValue1), getLabel(otlptranslator.ExemplarSpanIDKey, spanIDValue1)},
 				},
 			},
 		},
@@ -537,11 +575,51 @@ func Test_getPromExemplars(t *testing.T) {
 	}
 }
 
+func Test_getPromExemplarsV2(t *testing.T) {
+	tnow := time.Now()
+	tests := []struct {
+		name      string
+		histogram pmetric.HistogramDataPoint
+		expected  []writev2.Exemplar
+	}{
+		{
+			name:      "with_exemplars_double_value",
+			histogram: getHistogramDataPointWithExemplars(t, tnow, floatVal1, traceIDValue1, spanIDValue1, label11, value11),
+			expected: []writev2.Exemplar{
+				{
+					Value:     floatVal1,
+					Timestamp: timestamp.FromTime(tnow),
+					// TODO: after deal with examplar labels on getPromExemplarsV2, add the labels here
+					// LabelsRefs: []uint32{},
+				},
+			},
+		},
+		{
+			name:      "with_exemplars_int_value",
+			histogram: getHistogramDataPointWithExemplars(t, tnow, intVal2, traceIDValue1, spanIDValue1, label11, value11),
+			expected: []writev2.Exemplar{
+				{
+					Value:     float64(intVal2),
+					Timestamp: timestamp.FromTime(tnow),
+					// TODO: after deal with examplar labels on getPromExemplarsV2, add the labels here
+					// LabelsRefs: []uint32{},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			requests := getPromExemplarsV2(tt.histogram)
+			assert.Exactly(t, tt.expected, requests)
+		})
+	}
+}
+
 func TestAddResourceTargetInfo(t *testing.T) {
 	resourceAttrMap := map[string]any{
-		conventions.AttributeServiceName:       "service-name",
-		conventions.AttributeServiceNamespace:  "service-namespace",
-		conventions.AttributeServiceInstanceID: "service-instance-id",
+		string(conventions.ServiceNameKey):       "service-name",
+		string(conventions.ServiceNamespaceKey):  "service-namespace",
+		string(conventions.ServiceInstanceIDKey): "service-instance-id",
 	}
 	resourceWithServiceAttrs := pcommon.NewResource()
 	require.NoError(t, resourceWithServiceAttrs.Attributes().FromRaw(resourceAttrMap))
@@ -550,11 +628,11 @@ func TestAddResourceTargetInfo(t *testing.T) {
 	require.NoError(t, resourceWithOnlyServiceAttrs.Attributes().FromRaw(resourceAttrMap))
 	// service.name is an identifying resource attribute.
 	resourceWithOnlyServiceName := pcommon.NewResource()
-	resourceWithOnlyServiceName.Attributes().PutStr(conventions.AttributeServiceName, "service-name")
+	resourceWithOnlyServiceName.Attributes().PutStr(string(conventions.ServiceNameKey), "service-name")
 	resourceWithOnlyServiceName.Attributes().PutStr("resource_attr", "resource-attr-val-1")
 	// service.instance.id is an identifying resource attribute.
 	resourceWithOnlyServiceID := pcommon.NewResource()
-	resourceWithOnlyServiceID.Attributes().PutStr(conventions.AttributeServiceInstanceID, "service-instance-id")
+	resourceWithOnlyServiceID.Attributes().PutStr(string(conventions.ServiceInstanceIDKey), "service-instance-id")
 	resourceWithOnlyServiceID.Attributes().PutStr("resource_attr", "resource-attr-val-1")
 	for _, tc := range []struct {
 		desc       string
@@ -632,9 +710,10 @@ func TestAddResourceTargetInfo(t *testing.T) {
 		},
 	} {
 		t.Run(tc.desc, func(t *testing.T) {
-			converter := newPrometheusConverter()
+			converter := newPrometheusConverter(tc.settings)
 
-			addResourceTargetInfo(tc.resource, tc.settings, tc.timestamp, converter)
+			err := addResourceTargetInfo(tc.resource, tc.settings, tc.timestamp, converter)
+			require.NoError(t, err)
 
 			if len(tc.wantLabels) == 0 || tc.settings.DisableTargetInfo {
 				assert.Empty(t, converter.timeSeries())
@@ -689,14 +768,12 @@ func TestMostRecentTimestampInMetric(t *testing.T) {
 func TestPrometheusConverter_AddSummaryDataPoints(t *testing.T) {
 	ts := pcommon.Timestamp(time.Now().UnixNano())
 	tests := []struct {
-		name          string
-		isGateEnabled bool
-		metric        func() pmetric.Metric
-		want          func() map[uint64]*prompb.TimeSeries
+		name   string
+		metric func() pmetric.Metric
+		want   func() map[uint64]*prompb.TimeSeries
 	}{
 		{
-			name:          "summary with start time",
-			isGateEnabled: false,
+			name: "summary with start time",
 			metric: func() pmetric.Metric {
 				metric := pmetric.NewMetric()
 				metric.SetName("test_summary")
@@ -705,51 +782,6 @@ func TestPrometheusConverter_AddSummaryDataPoints(t *testing.T) {
 				dp := metric.Summary().DataPoints().AppendEmpty()
 				dp.SetTimestamp(ts)
 				dp.SetStartTimestamp(ts)
-
-				return metric
-			},
-			want: func() map[uint64]*prompb.TimeSeries {
-				labels := []prompb.Label{
-					{Name: model.MetricNameLabel, Value: "test_summary" + countStr},
-				}
-				createdLabels := []prompb.Label{
-					{Name: model.MetricNameLabel, Value: "test_summary" + createdSuffix},
-				}
-				sumLabels := []prompb.Label{
-					{Name: model.MetricNameLabel, Value: "test_summary" + sumStr},
-				}
-				return map[uint64]*prompb.TimeSeries{
-					timeSeriesSignature(labels): {
-						Labels: labels,
-						Samples: []prompb.Sample{
-							{Value: 0, Timestamp: convertTimeStamp(ts)},
-						},
-					},
-					timeSeriesSignature(sumLabels): {
-						Labels: sumLabels,
-						Samples: []prompb.Sample{
-							{Value: 0, Timestamp: convertTimeStamp(ts)},
-						},
-					},
-					timeSeriesSignature(createdLabels): {
-						Labels: createdLabels,
-						Samples: []prompb.Sample{
-							{Value: float64(convertTimeStamp(ts)), Timestamp: convertTimeStamp(ts)},
-						},
-					},
-				}
-			},
-		},
-		{
-			name:          "summary without start time",
-			isGateEnabled: false,
-			metric: func() pmetric.Metric {
-				metric := pmetric.NewMetric()
-				metric.SetName("test_summary")
-				metric.SetEmptySummary()
-
-				dp := metric.Summary().DataPoints().AppendEmpty()
-				dp.SetTimestamp(ts)
 
 				return metric
 			},
@@ -777,8 +809,7 @@ func TestPrometheusConverter_AddSummaryDataPoints(t *testing.T) {
 			},
 		},
 		{
-			name:          "summary with exportCreatedMetricGate enabled",
-			isGateEnabled: true,
+			name: "summary without start time",
 			metric: func() pmetric.Metric {
 				metric := pmetric.NewMetric()
 				metric.SetName("test_summary")
@@ -786,7 +817,6 @@ func TestPrometheusConverter_AddSummaryDataPoints(t *testing.T) {
 
 				dp := metric.Summary().DataPoints().AppendEmpty()
 				dp.SetTimestamp(ts)
-				dp.SetStartTimestamp(ts)
 
 				return metric
 			},
@@ -816,21 +846,16 @@ func TestPrometheusConverter_AddSummaryDataPoints(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			oldValue := exportCreatedMetricGate.IsEnabled()
-			testutil.SetFeatureGateForTest(t, exportCreatedMetricGate, tt.isGateEnabled)
-			defer testutil.SetFeatureGateForTest(t, exportCreatedMetricGate, oldValue)
-
 			metric := tt.metric()
-			converter := newPrometheusConverter()
+			converter := newPrometheusConverter(Settings{})
 
-			converter.addSummaryDataPoints(
+			err := converter.addSummaryDataPoints(
 				metric.Summary().DataPoints(),
 				pcommon.NewResource(),
-				Settings{
-					ExportCreatedMetric: true,
-				},
+				Settings{},
 				metric.Name(),
 			)
+			require.NoError(t, err)
 
 			assert.Equal(t, tt.want(), converter.unique)
 			assert.Empty(t, converter.conflicts)
@@ -841,14 +866,12 @@ func TestPrometheusConverter_AddSummaryDataPoints(t *testing.T) {
 func TestPrometheusConverter_AddHistogramDataPoints(t *testing.T) {
 	ts := pcommon.Timestamp(time.Now().UnixNano())
 	tests := []struct {
-		name          string
-		isGateEnabled bool
-		metric        func() pmetric.Metric
-		want          func() map[uint64]*prompb.TimeSeries
+		name   string
+		metric func() pmetric.Metric
+		want   func() map[uint64]*prompb.TimeSeries
 	}{
 		{
-			name:          "histogram with start time",
-			isGateEnabled: false,
+			name: "histogram with start time",
 			metric: func() pmetric.Metric {
 				metric := pmetric.NewMetric()
 				metric.SetName("test_hist")
@@ -857,52 +880,6 @@ func TestPrometheusConverter_AddHistogramDataPoints(t *testing.T) {
 				pt := metric.Histogram().DataPoints().AppendEmpty()
 				pt.SetTimestamp(ts)
 				pt.SetStartTimestamp(ts)
-
-				return metric
-			},
-			want: func() map[uint64]*prompb.TimeSeries {
-				labels := []prompb.Label{
-					{Name: model.MetricNameLabel, Value: "test_hist" + countStr},
-				}
-				createdLabels := []prompb.Label{
-					{Name: model.MetricNameLabel, Value: "test_hist" + createdSuffix},
-				}
-				infLabels := []prompb.Label{
-					{Name: model.MetricNameLabel, Value: "test_hist_bucket"},
-					{Name: model.BucketLabel, Value: "+Inf"},
-				}
-				return map[uint64]*prompb.TimeSeries{
-					timeSeriesSignature(infLabels): {
-						Labels: infLabels,
-						Samples: []prompb.Sample{
-							{Value: 0, Timestamp: convertTimeStamp(ts)},
-						},
-					},
-					timeSeriesSignature(labels): {
-						Labels: labels,
-						Samples: []prompb.Sample{
-							{Value: 0, Timestamp: convertTimeStamp(ts)},
-						},
-					},
-					timeSeriesSignature(createdLabels): {
-						Labels: createdLabels,
-						Samples: []prompb.Sample{
-							{Value: float64(convertTimeStamp(ts)), Timestamp: convertTimeStamp(ts)},
-						},
-					},
-				}
-			},
-		},
-		{
-			name:          "histogram without start time",
-			isGateEnabled: false,
-			metric: func() pmetric.Metric {
-				metric := pmetric.NewMetric()
-				metric.SetName("test_hist")
-				metric.SetEmptyHistogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-
-				pt := metric.Histogram().DataPoints().AppendEmpty()
-				pt.SetTimestamp(ts)
 
 				return metric
 			},
@@ -931,8 +908,7 @@ func TestPrometheusConverter_AddHistogramDataPoints(t *testing.T) {
 			},
 		},
 		{
-			name:          "histogram with exportCreatedMetricGate enabled",
-			isGateEnabled: true,
+			name: "histogram without start time",
 			metric: func() pmetric.Metric {
 				metric := pmetric.NewMetric()
 				metric.SetName("test_hist")
@@ -940,7 +916,6 @@ func TestPrometheusConverter_AddHistogramDataPoints(t *testing.T) {
 
 				pt := metric.Histogram().DataPoints().AppendEmpty()
 				pt.SetTimestamp(ts)
-				pt.SetStartTimestamp(ts)
 
 				return metric
 			},
@@ -971,21 +946,16 @@ func TestPrometheusConverter_AddHistogramDataPoints(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			oldValue := exportCreatedMetricGate.IsEnabled()
-			testutil.SetFeatureGateForTest(t, exportCreatedMetricGate, tt.isGateEnabled)
-			defer testutil.SetFeatureGateForTest(t, exportCreatedMetricGate, oldValue)
-
 			metric := tt.metric()
-			converter := newPrometheusConverter()
+			converter := newPrometheusConverter(Settings{})
 
-			converter.addHistogramDataPoints(
+			err := converter.addHistogramDataPoints(
 				metric.Histogram().DataPoints(),
 				pcommon.NewResource(),
-				Settings{
-					ExportCreatedMetric: true,
-				},
+				Settings{},
 				metric.Name(),
 			)
+			require.NoError(t, err)
 
 			assert.Equal(t, tt.want(), converter.unique)
 			assert.Empty(t, converter.conflicts)
@@ -994,7 +964,7 @@ func TestPrometheusConverter_AddHistogramDataPoints(t *testing.T) {
 }
 
 func TestPrometheusConverter_getOrCreateTimeSeries(t *testing.T) {
-	converter := newPrometheusConverter()
+	converter := newPrometheusConverter(Settings{})
 	lbls := []prompb.Label{
 		{
 			Name:  "key1",

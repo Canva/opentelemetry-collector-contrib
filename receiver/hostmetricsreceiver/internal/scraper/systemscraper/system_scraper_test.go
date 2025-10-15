@@ -12,16 +12,20 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.opentelemetry.io/collector/receiver/receivertest"
+	"go.opentelemetry.io/collector/scraper/scrapertest"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/systemscraper/internal/metadata"
 )
 
 func TestScrape(t *testing.T) {
-	ctx := context.Background()
+	if !supportedOS {
+		t.Skip()
+	}
+
+	ctx := t.Context()
 	fakeDate := time.Date(2006, 0o1, 0o2, 0o3, 0o4, 0o5, 0, time.UTC)
 
-	s := newUptimeScraper(ctx, receivertest.NewNopSettings(), &Config{
+	s := newSystemScraper(ctx, scrapertest.NewNopSettings(metadata.Type), &Config{
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 	})
 

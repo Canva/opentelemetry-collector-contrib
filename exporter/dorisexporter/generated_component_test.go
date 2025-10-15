@@ -19,8 +19,10 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
+var typ = component.MustNewType("doris")
+
 func TestComponentFactoryType(t *testing.T) {
-	require.Equal(t, "doris", NewFactory().Type().String())
+	require.Equal(t, typ, NewFactory().Type())
 }
 
 func TestComponentConfigStruct(t *testing.T) {
@@ -31,8 +33,14 @@ func TestComponentLifecycle(t *testing.T) {
 	factory := NewFactory()
 
 	tests := []struct {
-		name     string
 		createFn func(ctx context.Context, set exporter.Settings, cfg component.Config) (component.Component, error)
+		name     string
+<<<<<<<< HEAD:exporter/kineticaexporter/generated_component_test.go
+		createFn func(ctx context.Context, set exporter.Settings, cfg component.Config) (component.Component, error)
+|||||||| 6b1d3dd2c0c:exporter/kineticaexporter/generated_component_test.go
+		createFn func(ctx context.Context, set exporter.CreateSettings, cfg component.Config) (component.Component, error)
+========
+>>>>>>>> v0.137.0:exporter/dorisexporter/generated_component_test.go
 	}{
 
 		{
@@ -66,7 +74,15 @@ func TestComponentLifecycle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name+"-shutdown", func(t *testing.T) {
+<<<<<<<< HEAD:exporter/kineticaexporter/generated_component_test.go
 			c, err := tt.createFn(context.Background(), exportertest.NewNopSettings(), cfg)
+|||||||| 6b1d3dd2c0c:exporter/kineticaexporter/generated_component_test.go
+	for _, test := range tests {
+		t.Run(test.name+"-shutdown", func(t *testing.T) {
+			c, err := test.createFn(context.Background(), exportertest.NewNopCreateSettings(), cfg)
+========
+			c, err := tt.createFn(context.Background(), exportertest.NewNopSettings(typ), cfg)
+>>>>>>>> v0.137.0:exporter/dorisexporter/generated_component_test.go
 			require.NoError(t, err)
 			err = c.Shutdown(context.Background())
 			require.NoError(t, err)

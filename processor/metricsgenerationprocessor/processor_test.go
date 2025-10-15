@@ -4,7 +4,6 @@
 package metricsgenerationprocessor
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -21,6 +20,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricsgenerationprocessor/internal/metadata"
 )
 
 type testMetric struct {
@@ -280,8 +280,8 @@ func TestMetricsGenerationProcessor(t *testing.T) {
 			}
 			factory := NewFactory()
 			mgp, err := factory.CreateMetrics(
-				context.Background(),
-				processortest.NewNopSettings(),
+				t.Context(),
+				processortest.NewNopSettings(metadata.Type),
 				cfg,
 				next,
 			)
@@ -290,10 +290,10 @@ func TestMetricsGenerationProcessor(t *testing.T) {
 
 			caps := mgp.Capabilities()
 			assert.True(t, caps.MutatesData)
-			ctx := context.Background()
+			ctx := t.Context()
 			require.NoError(t, mgp.Start(ctx, nil))
 
-			cErr := mgp.ConsumeMetrics(context.Background(), test.inMetrics)
+			cErr := mgp.ConsumeMetrics(t.Context(), test.inMetrics)
 			assert.NoError(t, cErr)
 			got := next.AllMetrics()
 
@@ -528,8 +528,8 @@ func TestGoldenFileMetrics(t *testing.T) {
 			require.NoError(t, sub.Unmarshal(cfg))
 
 			mgp, err := factory.CreateMetrics(
-				context.Background(),
-				processortest.NewNopSettings(),
+				t.Context(),
+				processortest.NewNopSettings(metadata.Type),
 				cfg,
 				next,
 			)
@@ -537,12 +537,12 @@ func TestGoldenFileMetrics(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.True(t, mgp.Capabilities().MutatesData)
-			require.NoError(t, mgp.Start(context.Background(), nil))
+			require.NoError(t, mgp.Start(t.Context(), nil))
 
 			inputMetrics, err := golden.ReadMetrics(filepath.Join("testdata", testCase.testDir, "metrics_input.yaml"))
 			assert.NoError(t, err)
 
-			err = mgp.ConsumeMetrics(context.Background(), inputMetrics)
+			err = mgp.ConsumeMetrics(t.Context(), inputMetrics)
 			assert.NoError(t, err)
 
 			got := next.AllMetrics()

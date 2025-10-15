@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,6 +24,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/batchpersignal"
 )
 
+const (
+	pseudoAttrSpanName = "span.name"
+	pseudoAttrSpanKind = "span.kind"
+)
+
 var _ exporter.Traces = (*traceExporterImp)(nil)
 
 type exporterTraces map[*wrappedExporter]ptrace.Traces
@@ -30,6 +36,7 @@ type exporterTraces map[*wrappedExporter]ptrace.Traces
 type traceExporterImp struct {
 	loadBalancer        *loadBalancer
 	routingKey          routingKey
+	routingAttrs        []string
 	routingResourceKeys []string
 
 	logger     *zap.Logger
@@ -48,7 +55,7 @@ func newTracesExporter(params exporter.Settings, cfg component.Config) (*traceEx
 	exporterFactory := otlpexporter.NewFactory()
 	cfFunc := func(ctx context.Context, endpoint string) (component.Component, error) {
 		oCfg := buildExporterConfig(cfg.(*Config), endpoint)
-		oParams := buildExporterSettings(params, endpoint)
+		oParams := buildExporterSettings(exporterFactory.Type(), params, endpoint)
 
 		return exporterFactory.CreateTraces(ctx, oParams, &oCfg)
 	}
@@ -69,6 +76,9 @@ func newTracesExporter(params exporter.Settings, cfg component.Config) (*traceEx
 	case svcRoutingStr:
 		traceExporter.routingKey = resourceKeysRouting
 		traceExporter.routingResourceKeys = []string{"service.name"}
+	case attrRoutingStr:
+		traceExporter.routingKey = attrRouting
+		traceExporter.routingAttrs = cfg.(*Config).RoutingAttributes
 	case resourceKeysRoutingStr, resourceRoutingStr:
 		traceExporter.routingKey = resourceKeysRouting
 		traceExporter.routingResourceKeys = cfg.(*Config).ResourceKeys
@@ -79,7 +89,7 @@ func newTracesExporter(params exporter.Settings, cfg component.Config) (*traceEx
 	return &traceExporter, nil
 }
 
-func (e *traceExporterImp) Capabilities() consumer.Capabilities {
+func (*traceExporterImp) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: false}
 }
 
@@ -100,7 +110,7 @@ func (e *traceExporterImp) ConsumeTraces(ctx context.Context, td ptrace.Traces) 
 	exporterSegregatedTraces := make(exporterTraces)
 	endpoints := make(map[*wrappedExporter]string)
 	for _, batch := range batches {
-		routingID, err := e.routingIdentifiersFromTraces(batch)
+		routingID, err := routingIdentifiersFromTraces(batch, e.routingKey, e.routingAttrs, e.routingResourceKeys)
 		if err != nil {
 			return err
 		}
@@ -142,7 +152,15 @@ func (e *traceExporterImp) ConsumeTraces(ctx context.Context, td ptrace.Traces) 
 	return errs
 }
 
-func (e *traceExporterImp) routingIdentifiersFromTraces(td ptrace.Traces) (map[string]bool, error) {
+// routingIdentifiersFromTraces reads the traces and determines an identifier that can be used to define a position on the
+// ring hash. It takes the routingKey, defining what type of routing should be used, and a series of attributes
+// (optionally) used if the routingKey is attrRouting or resourceKeysRouting.
+//
+// svcRouting, attrRouting, and resourceKeysRouting are supported. For attrRouting, any attribute, as well the "pseudo" attributes span.name
+// and span.kind are supported.
+//
+// In practice, makes the assumption that ptrace.Traces includes only one trace of each kind, in the "trace tree".
+func routingIdentifiersFromTraces(td ptrace.Traces, rType routingKey, attrs []string, resourceKeys []string) (map[string]bool, error) {
 	ids := make(map[string]bool)
 	rs := td.ResourceSpans()
 	if rs.Len() == 0 {
@@ -159,12 +177,26 @@ func (e *traceExporterImp) routingIdentifiersFromTraces(td ptrace.Traces) (map[s
 		return nil, errors.New("empty spans")
 	}
 
-	if e.routingKey == resourceKeysRouting {
+	// Determine how the key should be populated.
+	switch rType {
+	case traceIDRouting:
+		// The simple case is the TraceID routing. In this case, we just use the string representation of the Trace ID.
+		tid := spans.At(0).TraceID()
+		ids[string(tid[:])] = true
+		return ids, nil
+	case svcRouting:
+		// Service Name is still handled as an "attribute router", it's just expressed as a "pseudo attribute"
+		attrs = []string{"service.name"}
+	case attrRouting:
+		// By default, we'll just use the input provided.
+		break
+	case resourceKeysRouting:
+		// Canva's resource keys routing
 		var missingResourceKey bool
 		for i := 0; i < rs.Len(); i++ {
 			var resourceKeyFound bool
 			rsi := rs.At(i)
-			for _, attrKey := range e.routingResourceKeys {
+			for _, attrKey := range resourceKeys {
 				if v, ok := rsi.Resource().Attributes().Get(attrKey); ok {
 					ids[v.AsString()] = true
 					resourceKeyFound = true
@@ -178,8 +210,62 @@ func (e *traceExporterImp) routingIdentifiersFromTraces(td ptrace.Traces) (map[s
 		if !missingResourceKey {
 			return ids, nil
 		}
+		// If some resources are missing keys, fall back to trace ID routing
+		tid := spans.At(0).TraceID()
+		ids[string(tid[:])] = true
+		return ids, nil
+	default:
+		return nil, fmt.Errorf("unsupported routing_key: %d", rType)
 	}
-	tid := spans.At(0).TraceID()
-	ids[string(tid[:])] = true
+
+	// Composite the attributes together as a key (for attrRouting and svcRouting).
+	for i := 0; i < rs.Len(); i++ {
+		// rKey will never return an error. See
+		// 1. https://pkg.go.dev/bytes#Buffer.Write
+		// 2. https://stackoverflow.com/a/70388629
+		var rKey strings.Builder
+
+		for _, a := range attrs {
+			// resource spans
+			rAttr, ok := rs.At(i).Resource().Attributes().Get(a)
+			if ok {
+				rKey.WriteString(rAttr.Str())
+				continue
+			}
+
+			// ils or "instrumentation library spans"
+			ils := rs.At(0).ScopeSpans()
+			iAttr, ok := ils.At(0).Scope().Attributes().Get(a)
+			if ok {
+				rKey.WriteString(iAttr.Str())
+				continue
+			}
+
+			// the lowest level span (or what engineers regularly interact with)
+			spans := ils.At(0).Spans()
+
+			if a == pseudoAttrSpanKind {
+				rKey.WriteString(spans.At(0).Kind().String())
+
+				continue
+			}
+
+			if a == pseudoAttrSpanName {
+				rKey.WriteString(spans.At(0).Name())
+
+				continue
+			}
+
+			sAttr, ok := spans.At(0).Attributes().Get(a)
+			if ok {
+				rKey.WriteString(sAttr.Str())
+				continue
+			}
+		}
+
+		// No matter what, there will be a key here (even if that key is "").
+		ids[rKey.String()] = true
+	}
+
 	return ids, nil
 }

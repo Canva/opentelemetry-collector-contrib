@@ -6,6 +6,8 @@ server:
 capabilities:
   reports_effective_config: true
   reports_own_metrics: true
+  reports_own_logs: true
+  reports_own_traces: true
   reports_health: true
   accepts_remote_config: true
   reports_remote_config: true
@@ -17,3 +19,23 @@ storage:
 agent:
   executable: ../../bin/otelcontribcol_{{.goos}}_{{.goarch}}{{.extension}}
   config_apply_timeout: {{.config_apply_timeout}}
+  {{- if .use_hup_config_reload }}
+  use_hup_config_reload: {{ .use_hup_config_reload }}
+  {{- end }}
+
+telemetry:
+  traces:
+    processors:
+      - simple:
+          exporter:
+            otlp:
+              protocol: http/protobuf
+              endpoint: http://{{.telemetryUrl}}
+  logs:
+    level: debug
+    processors:
+      - simple:
+          exporter:
+            otlp:
+              protocol: http/protobuf
+              endpoint: http://{{.telemetryUrl}}

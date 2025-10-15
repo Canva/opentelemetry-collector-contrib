@@ -13,7 +13,7 @@ import (
 
 // getValidMockedObjects returns a list of volume claims and persistent
 // volume objects based on values present in testdata/pods.json. These
-// values will be used to mock objects returned by the Kuberentes API.
+// values will be used to mock objects returned by the Kubernetes API.
 func getValidMockedObjects() []runtime.Object {
 	return []runtime.Object{
 		volumeClaim1,
@@ -42,7 +42,7 @@ func getNodeWithCPUCapacity(nodeName string, cpuCap int) *v1.Node {
 	}
 }
 
-func getNodeWithMemoryCapacity(nodeName string, memoryCap string) *v1.Node {
+func getNodeWithMemoryCapacity(nodeName, memoryCap string) *v1.Node {
 	resourceList := make(v1.ResourceList)
 	q := resource.QuantityValue{}
 	_ = q.Set(memoryCap)

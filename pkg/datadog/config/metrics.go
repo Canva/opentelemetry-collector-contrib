@@ -5,9 +5,10 @@ package config // import "github.com/open-telemetry/opentelemetry-collector-cont
 
 import (
 	"encoding"
+	"errors"
 	"fmt"
 
-	otlpmetrics "github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/metrics"
+	otlpmetrics "github.com/DataDog/datadog-agent/pkg/opentelemetry-mapping-go/otlp/metrics"
 	"go.opentelemetry.io/collector/config/confignet"
 )
 
@@ -80,7 +81,7 @@ type HistogramConfig struct {
 
 func (c *HistogramConfig) validate() error {
 	if c.Mode == HistogramModeNoBuckets && !c.SendAggregations {
-		return fmt.Errorf("'nobuckets' mode and `send_aggregation_metrics` set to false will send no histogram metrics")
+		return errors.New("'nobuckets' mode and `send_aggregation_metrics` set to false will send no histogram metrics")
 	}
 	return nil
 }
@@ -194,6 +195,8 @@ type SummaryConfig struct {
 	// The default is 'gauges'.
 	// See https://docs.datadoghq.com/metrics/otlp/?tab=summary#mapping for details and examples.
 	Mode SummaryMode `mapstructure:"mode"`
+	// prevent unkeyed literal initialization
+	_ struct{}
 }
 
 // MetricsExporterConfig provides options for a user to customize the behavior of the
@@ -206,6 +209,8 @@ type MetricsExporterConfig struct {
 	// InstrumentationScopeMetadataAsTags, if set to true, adds the name and version of the
 	// instrumentation scope that created a metric to the metric tags
 	InstrumentationScopeMetadataAsTags bool `mapstructure:"instrumentation_scope_metadata_as_tags"`
+	// prevent unkeyed literal initialization
+	_ struct{}
 }
 
 // ToTranslatorOpts returns a list of metrics translator options from the metrics config
@@ -235,9 +240,10 @@ func (mcfg MetricsConfig) ToTranslatorOpts() []otlpmetrics.TranslatorOption {
 	case CumulativeMonotonicSumModeToDelta:
 		numberMode = otlpmetrics.NumberModeCumulativeToDelta
 	}
-	options = append(options, otlpmetrics.WithNumberMode(numberMode))
-	options = append(options, otlpmetrics.WithInitialCumulMonoValueMode(
-		otlpmetrics.InitialCumulMonoValueMode(mcfg.SumConfig.InitialCumulativeMonotonicMode)))
+	options = append(options,
+		otlpmetrics.WithNumberMode(numberMode),
+		otlpmetrics.WithInitialCumulMonoValueMode(
+			otlpmetrics.InitialCumulMonoValueMode(mcfg.SumConfig.InitialCumulativeMonotonicMode)))
 
 	return options
 }

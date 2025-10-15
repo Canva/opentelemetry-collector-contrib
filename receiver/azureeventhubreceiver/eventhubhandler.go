@@ -6,10 +6,10 @@ package azureeventhubreceiver // import "github.com/open-telemetry/opentelemetry
 import (
 	"context"
 	"errors"
+	"time"
 
-	eventhub "github.com/Azure/azure-event-hubs-go/v3"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/extension/experimental/storage"
+	"go.opentelemetry.io/collector/extension/xextension/storage"
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
 
@@ -17,32 +17,26 @@ import (
 )
 
 type hubWrapper interface {
-	GetRuntimeInformation(ctx context.Context) (*eventhub.HubRuntimeInformation, error)
-	Receive(ctx context.Context, partitionID string, handler eventhub.Handler, opts ...eventhub.ReceiveOption) (listerHandleWrapper, error)
+	GetRuntimeInformation(ctx context.Context) (*hubRuntimeInfo, error)
+	Receive(ctx context.Context, partitionID string, handler hubHandler, applyOffset bool) (listenerHandleWrapper, error)
 	Close(ctx context.Context) error
 }
 
-type hubWrapperImpl struct {
-	hub *eventhub.Hub
-}
-
-func (h *hubWrapperImpl) GetRuntimeInformation(ctx context.Context) (*eventhub.HubRuntimeInformation, error) {
-	return h.hub.GetRuntimeInformation(ctx)
-}
-
-func (h *hubWrapperImpl) Receive(ctx context.Context, partitionID string, handler eventhub.Handler, opts ...eventhub.ReceiveOption) (listerHandleWrapper, error) {
-	l, err := h.hub.Receive(ctx, partitionID, handler, opts...)
-	return l, err
-}
-
-func (h *hubWrapperImpl) Close(ctx context.Context) error {
-	return h.hub.Close(ctx)
-}
-
-type listerHandleWrapper interface {
+type listenerHandleWrapper interface {
 	Done() <-chan struct{}
 	Err() error
 }
+
+type hubHandler func(ctx context.Context, event *azureEvent) error
+
+type hubRuntimeInfo struct {
+	Path           string
+	CreatedAt      time.Time
+	PartitionCount int
+	PartitionIDs   []string
+}
+
+var errNoConfig = errors.New("Configuration error, hub not accessible")
 
 type eventhubHandler struct {
 	hub           hubWrapper
@@ -53,10 +47,14 @@ type eventhubHandler struct {
 	storageClient storage.Client
 }
 
+func shouldInitializeStorageClient(storageClient storage.Client, storageID *component.ID) bool {
+	return storageClient == nil && storageID != nil
+}
+
 func (h *eventhubHandler) run(ctx context.Context, host component.Host) error {
 	ctx, h.cancel = context.WithCancel(ctx)
 
-	if h.storageClient == nil { // set manually for testing.
+	if shouldInitializeStorageClient(h.storageClient, h.config.StorageID) { // set manually for testing.
 		storageClient, err := adapter.GetStorageClient(ctx, host, h.config.StorageID, h.settings.ID)
 		if err != nil {
 			h.settings.Logger.Debug("Error connecting to Storage", zap.Error(err))
@@ -66,80 +64,49 @@ func (h *eventhubHandler) run(ctx context.Context, host component.Host) error {
 	}
 
 	if h.hub == nil { // set manually for testing.
-		hub, newHubErr := eventhub.NewHubFromConnectionString(h.config.Connection, eventhub.HubWithOffsetPersistence(&storageCheckpointPersister{storageClient: h.storageClient}))
-		if newHubErr != nil {
-			h.settings.Logger.Debug("Error connecting to Event Hub", zap.Error(newHubErr))
-			return newHubErr
-		}
-		h.hub = &hubWrapperImpl{
-			hub: hub,
+		if azEventHubFeatureGate.IsEnabled() {
+			newHub, err := newAzeventhubWrapper(h)
+			if err != nil {
+				return err
+			}
+			h.hub = newHub
+		} else {
+			newHub, err := newLegacyHubWrapper(h)
+			if err != nil {
+				return err
+			}
+			h.hub = newHub
 		}
 	}
 
-	if h.config.Partition == "" {
-		// listen to each partition of the Event Hub
-		runtimeInfo, err := h.hub.GetRuntimeInformation(ctx)
-		if err != nil {
-			h.settings.Logger.Debug("Error getting Runtime Information", zap.Error(err))
-			return err
-		}
-
-		for _, partitionID := range runtimeInfo.PartitionIDs {
-			err = h.setUpOnePartition(ctx, partitionID, false)
-			if err != nil {
-				h.settings.Logger.Debug("Error setting up partition", zap.Error(err))
-				return err
-			}
-		}
-	} else {
+	if h.config.Partition != "" {
 		err := h.setUpOnePartition(ctx, h.config.Partition, true)
 		if err != nil {
 			h.settings.Logger.Debug("Error setting up partition", zap.Error(err))
-			return err
 		}
-	}
-
-	if h.hub != nil {
-		return nil
-	}
-
-	hub, err := eventhub.NewHubFromConnectionString(h.config.Connection)
-	if err != nil {
 		return err
 	}
 
-	h.hub = &hubWrapperImpl{
-		hub: hub,
-	}
-
-	runtimeInfo, err := hub.GetRuntimeInformation(ctx)
+	// listen to each partition of the Event Hub
+	runtimeInfo, err := h.hub.GetRuntimeInformation(ctx)
 	if err != nil {
+		h.settings.Logger.Debug("Error getting Runtime Information", zap.Error(err))
 		return err
 	}
 
+	var errs []error
 	for _, partitionID := range runtimeInfo.PartitionIDs {
-		_, err := hub.Receive(ctx, partitionID, h.newMessageHandler, eventhub.ReceiveWithLatestOffset())
+		err = h.setUpOnePartition(ctx, partitionID, false)
 		if err != nil {
-			return err
+			h.settings.Logger.Debug("Error setting up partition", zap.Error(err), zap.String("partition", partitionID))
+			errs = append(errs, err)
 		}
 	}
-
-	return nil
+	return errors.Join(errs...)
 }
 
 func (h *eventhubHandler) setUpOnePartition(ctx context.Context, partitionID string, applyOffset bool) error {
-	receiverOptions := []eventhub.ReceiveOption{}
-	if applyOffset && h.config.Offset != "" {
-		receiverOptions = append(receiverOptions, eventhub.ReceiveWithStartingOffset(h.config.Offset))
-	} else {
-		receiverOptions = append(receiverOptions, eventhub.ReceiveWithLatestOffset())
-	}
-
-	if h.config.ConsumerGroup != "" {
-		receiverOptions = append(receiverOptions, eventhub.ReceiveWithConsumerGroup(h.config.ConsumerGroup))
-	}
-
-	handle, err := h.hub.Receive(ctx, partitionID, h.newMessageHandler, receiverOptions...)
+	handle, err := h.hub.Receive(ctx, partitionID, h.newMessageHandler, applyOffset)
 	if err != nil {
 		return err
 	}
@@ -154,7 +121,7 @@ func (h *eventhubHandler) setUpOnePartition(ctx context.Context, partitionID str
 	return nil
 }
 
-func (h *eventhubHandler) newMessageHandler(ctx context.Context, event *eventhub.Event) error {
+func (h *eventhubHandler) newMessageHandler(ctx context.Context, event *azureEvent) error {
 	err := h.dataConsumer.consume(ctx, event)
 	if err != nil {
 		h.settings.Logger.Error("error decoding message", zap.Error(err))

@@ -98,18 +98,11 @@ func (opt ignoreProfileAttributeValue) applyOnProfiles(expected, actual pprofile
 }
 
 func (opt ignoreProfileAttributeValue) maskProfileAttributeValue(profiles pprofile.Profiles) {
-	rls := profiles.ResourceProfiles()
-	for i := 0; i < profiles.ResourceProfiles().Len(); i++ {
-		sls := rls.At(i).ScopeProfiles()
-		for j := 0; j < sls.Len(); j++ {
-			lrs := sls.At(j).Profiles()
-			for k := 0; k < lrs.Len(); k++ {
-				lr := lrs.At(k)
-				val, exists := lr.Attributes().Get(opt.attributeName)
-				if exists {
-					val.SetEmptyBytes()
-				}
-			}
+	dic := profiles.Dictionary()
+	for l := 0; l < dic.AttributeTable().Len(); l++ {
+		a := dic.AttributeTable().At(l)
+		if dic.StringTable().At(int(a.KeyStrindex())) == opt.attributeName {
+			a.Value().SetEmptyBytes()
 		}
 	}
 }
@@ -127,7 +120,7 @@ func (opt ignoreProfileTimestampValues) applyOnProfiles(expected, actual pprofil
 	opt.maskProfileTimestampValues(actual)
 }
 
-func (opt ignoreProfileTimestampValues) maskProfileTimestampValues(profiles pprofile.Profiles) {
+func (ignoreProfileTimestampValues) maskProfileTimestampValues(profiles pprofile.Profiles) {
 	rls := profiles.ResourceProfiles()
 	for i := 0; i < profiles.ResourceProfiles().Len(); i++ {
 		sls := rls.At(i).ScopeProfiles()
@@ -135,7 +128,7 @@ func (opt ignoreProfileTimestampValues) maskProfileTimestampValues(profiles ppro
 			lrs := sls.At(j).Profiles()
 			for k := 0; k < lrs.Len(); k++ {
 				lr := lrs.At(k)
-				lr.SetStartTime(pcommon.NewTimestampFromTime(time.Time{}))
+				lr.SetTime(pcommon.NewTimestampFromTime(time.Time{}))
 				lr.SetDuration(pcommon.NewTimestampFromTime(time.Time{}))
 			}
 		}
@@ -195,21 +188,26 @@ func sortProfileSlices(ls pprofile.Profiles) {
 	for i := 0; i < ls.ResourceProfiles().Len(); i++ {
 		for j := 0; j < ls.ResourceProfiles().At(i).ScopeProfiles().Len(); j++ {
 			ls.ResourceProfiles().At(i).ScopeProfiles().At(j).Profiles().Sort(func(a, b pprofile.Profile) bool {
-				if a.StartTime() != b.StartTime() {
-					return a.StartTime() < b.StartTime()
+				if a.Time() != b.Time() {
+					return a.Time() < b.Time()
 				}
 				if a.Duration() != b.Duration() {
 					return a.Duration() < b.Duration()
 				}
 				as := a.ProfileID()
 				bs := b.ProfileID()
-				if !bytes.Equal(as[:], bs[:]) {
-					return bytes.Compare(as[:], bs[:]) < 0
-				}
-				aAttrs := pdatautil.MapHash(a.Attributes())
-				bAttrs := pdatautil.MapHash(b.Attributes())
-				return bytes.Compare(aAttrs[:], bAttrs[:]) < 0
+				return bytes.Compare(as[:], bs[:]) < 0
 			})
 		}
 	}
+}
+
+func profileAttributesToMap(dic pprofile.ProfilesDictionary, p pprofile.Profile) map[string]string {
+	d := map[string]string{}
+	for _, i := range p.AttributeIndices().AsRaw() {
+		v := dic.AttributeTable().At(int(i))
+		d[dic.StringTable().At(int(v.KeyStrindex()))] = v.Value().AsString()
+	}
+
+	return d
 }

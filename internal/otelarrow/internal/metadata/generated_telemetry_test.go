@@ -50,14 +50,26 @@ func TestProviders(t *testing.T) {
 
 	meter := Meter(set)
 	if m, ok := meter.(mockMeter); ok {
+<<<<<<<< HEAD:internal/otelarrow/internal/metadata/generated_telemetry_test.go
 		require.Equal(t, "github.com/open-telemetry/opentelemetry-collector-contrib/internal/otelarrow", m.name)
+|||||||| 6b1d3dd2c0c:extension/googleclientauthextension/internal/metadata/generated_telemetry_test.go
+		require.Equal(t, "github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension", m.name)
+========
+		require.Equal(t, "github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer", m.name)
+>>>>>>>> v0.137.0:pkg/stanza/fileconsumer/internal/metadata/generated_telemetry_test.go
 	} else {
 		require.Fail(t, "returned Meter not mockMeter")
 	}
 
 	tracer := Tracer(set)
 	if m, ok := tracer.(mockTracer); ok {
+<<<<<<<< HEAD:internal/otelarrow/internal/metadata/generated_telemetry_test.go
 		require.Equal(t, "github.com/open-telemetry/opentelemetry-collector-contrib/internal/otelarrow", m.name)
+|||||||| 6b1d3dd2c0c:extension/googleclientauthextension/internal/metadata/generated_telemetry_test.go
+		require.Equal(t, "github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension", m.name)
+========
+		require.Equal(t, "github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer", m.name)
+>>>>>>>> v0.137.0:pkg/stanza/fileconsumer/internal/metadata/generated_telemetry_test.go
 	} else {
 		require.Fail(t, "returned Meter not mockTracer")
 	}

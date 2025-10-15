@@ -1,6 +1,9 @@
 local/
 vendor/
 
+# Dev Container
+/.devcontainer/
+
 # GoLand IDEA
 /.idea/
 *.iml
@@ -35,6 +38,7 @@ __debug_bin*
 coverage/*
 *-coverage.txt
 integration-coverage.html
+internal/tools/testresults/*
 
 # Wix
 *.wixobj

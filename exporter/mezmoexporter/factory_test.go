@@ -4,7 +4,6 @@
 package mezmoexporter
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -43,11 +42,12 @@ func TestCreateDefaultConfig(t *testing.T) {
 
 		ClientConfig: confighttp.ClientConfig{
 			Timeout:             5 * time.Second,
-			MaxIdleConns:        &defaultMaxIdleConns,
-			MaxIdleConnsPerHost: &defaultMaxIdleConnsPerHost,
-			MaxConnsPerHost:     &defaultMaxConnsPerHost,
-			IdleConnTimeout:     &defaultIdleConnTimeout,
+			MaxIdleConns:        defaultMaxIdleConns,
+			MaxIdleConnsPerHost: defaultMaxIdleConnsPerHost,
+			MaxConnsPerHost:     defaultMaxConnsPerHost,
+			IdleConnTimeout:     defaultIdleConnTimeout,
 			Headers:             map[string]configopaque.String{},
+			ForceAttemptHTTP2:   true,
 		},
 		BackOffConfig: configretry.NewDefaultBackOffConfig(),
 		QueueSettings: exporterhelper.NewDefaultQueueConfig(),
@@ -68,13 +68,13 @@ func TestCreateLogs(t *testing.T) {
 	cfg.IngestURL = "https://example.com:8088/otel/ingest/rest"
 	cfg.IngestKey = "1234-1234"
 
-	params := exportertest.NewNopSettings()
-	_, err := createLogsExporter(context.Background(), params, cfg)
+	params := exportertest.NewNopSettings(metadata.Type)
+	_, err := createLogsExporter(t.Context(), params, cfg)
 	assert.NoError(t, err)
 }
 
 func TestCreateLogsNoConfig(t *testing.T) {
-	params := exportertest.NewNopSettings()
-	_, err := createLogsExporter(context.Background(), params, nil)
+	params := exportertest.NewNopSettings(metadata.Type)
+	_, err := createLogsExporter(t.Context(), params, nil)
 	assert.Error(t, err)
 }

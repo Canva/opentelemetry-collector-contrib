@@ -7,10 +7,23 @@ import (
 )
 
 var (
+<<<<<<<< HEAD:exporter/lokiexporter/internal/metadata/generated_status.go
+	Type      = component.MustNewType("loki")
+	ScopeName = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/lokiexporter"
+|||||||| 6b1d3dd2c0c:exporter/lokiexporter/internal/metadata/generated_status.go
+	Type = component.MustNewType("loki")
+========
 	Type      = component.MustNewType("netflow")
 	ScopeName = "otelcol/netflowreceiver"
+>>>>>>>> v0.137.0:receiver/netflowreceiver/internal/metadata/generated_status.go
 )
 
 const (
-	LogsStability = component.StabilityLevelDevelopment
+<<<<<<<< HEAD:exporter/lokiexporter/internal/metadata/generated_status.go
+	LogsStability = component.StabilityLevelDeprecated
+|||||||| 6b1d3dd2c0c:exporter/lokiexporter/internal/metadata/generated_status.go
+	LogsStability = component.StabilityLevelBeta
+========
+	LogsStability = component.StabilityLevelAlpha
+>>>>>>>> v0.137.0:receiver/netflowreceiver/internal/metadata/generated_status.go
 )

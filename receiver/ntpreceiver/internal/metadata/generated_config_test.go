@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
+
+	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
 )
 
@@ -25,10 +27,39 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
+<<<<<<<< HEAD:receiver/githubreceiver/internal/metadata/generated_config_test.go
+					VcsChangeCount:          MetricConfig{Enabled: true},
+					VcsChangeDuration:       MetricConfig{Enabled: true},
+					VcsChangeTimeToApproval: MetricConfig{Enabled: true},
+					VcsChangeTimeToMerge:    MetricConfig{Enabled: true},
+					VcsContributorCount:     MetricConfig{Enabled: true},
+					VcsRefCount:             MetricConfig{Enabled: true},
+					VcsRefLinesDelta:        MetricConfig{Enabled: true},
+					VcsRefRevisionsDelta:    MetricConfig{Enabled: true},
+					VcsRefTime:              MetricConfig{Enabled: true},
+					VcsRepositoryCount:      MetricConfig{Enabled: true},
+|||||||| 6b1d3dd2c0c:receiver/gitproviderreceiver/internal/metadata/generated_config_test.go
+					GitRepositoryBranchCount:               MetricConfig{Enabled: true},
+					GitRepositoryContributorCount:          MetricConfig{Enabled: true},
+					GitRepositoryCount:                     MetricConfig{Enabled: true},
+					GitRepositoryPullRequestCount:          MetricConfig{Enabled: true},
+					GitRepositoryPullRequestTimeOpen:       MetricConfig{Enabled: true},
+					GitRepositoryPullRequestTimeToApproval: MetricConfig{Enabled: true},
+					GitRepositoryPullRequestTimeToMerge:    MetricConfig{Enabled: true},
+========
 					NtpOffset: MetricConfig{Enabled: true},
+>>>>>>>> v0.137.0:receiver/ntpreceiver/internal/metadata/generated_config_test.go
 				},
 				ResourceAttributes: ResourceAttributesConfig{
+<<<<<<<< HEAD:receiver/githubreceiver/internal/metadata/generated_config_test.go
+					OrganizationName: ResourceAttributeConfig{Enabled: true},
+					VcsVendorName:    ResourceAttributeConfig{Enabled: true},
+|||||||| 6b1d3dd2c0c:receiver/gitproviderreceiver/internal/metadata/generated_config_test.go
+					GitVendorName:    ResourceAttributeConfig{Enabled: true},
+					OrganizationName: ResourceAttributeConfig{Enabled: true},
+========
 					NtpHost: ResourceAttributeConfig{Enabled: true},
+>>>>>>>> v0.137.0:receiver/ntpreceiver/internal/metadata/generated_config_test.go
 				},
 			},
 		},
@@ -36,10 +67,39 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
+<<<<<<<< HEAD:receiver/githubreceiver/internal/metadata/generated_config_test.go
+					VcsChangeCount:          MetricConfig{Enabled: false},
+					VcsChangeDuration:       MetricConfig{Enabled: false},
+					VcsChangeTimeToApproval: MetricConfig{Enabled: false},
+					VcsChangeTimeToMerge:    MetricConfig{Enabled: false},
+					VcsContributorCount:     MetricConfig{Enabled: false},
+					VcsRefCount:             MetricConfig{Enabled: false},
+					VcsRefLinesDelta:        MetricConfig{Enabled: false},
+					VcsRefRevisionsDelta:    MetricConfig{Enabled: false},
+					VcsRefTime:              MetricConfig{Enabled: false},
+					VcsRepositoryCount:      MetricConfig{Enabled: false},
+|||||||| 6b1d3dd2c0c:receiver/gitproviderreceiver/internal/metadata/generated_config_test.go
+					GitRepositoryBranchCount:               MetricConfig{Enabled: false},
+					GitRepositoryContributorCount:          MetricConfig{Enabled: false},
+					GitRepositoryCount:                     MetricConfig{Enabled: false},
+					GitRepositoryPullRequestCount:          MetricConfig{Enabled: false},
+					GitRepositoryPullRequestTimeOpen:       MetricConfig{Enabled: false},
+					GitRepositoryPullRequestTimeToApproval: MetricConfig{Enabled: false},
+					GitRepositoryPullRequestTimeToMerge:    MetricConfig{Enabled: false},
+========
 					NtpOffset: MetricConfig{Enabled: false},
+>>>>>>>> v0.137.0:receiver/ntpreceiver/internal/metadata/generated_config_test.go
 				},
 				ResourceAttributes: ResourceAttributesConfig{
+<<<<<<<< HEAD:receiver/githubreceiver/internal/metadata/generated_config_test.go
+					OrganizationName: ResourceAttributeConfig{Enabled: false},
+					VcsVendorName:    ResourceAttributeConfig{Enabled: false},
+|||||||| 6b1d3dd2c0c:receiver/gitproviderreceiver/internal/metadata/generated_config_test.go
+					GitVendorName:    ResourceAttributeConfig{Enabled: false},
+					OrganizationName: ResourceAttributeConfig{Enabled: false},
+========
 					NtpHost: ResourceAttributeConfig{Enabled: false},
+>>>>>>>> v0.137.0:receiver/ntpreceiver/internal/metadata/generated_config_test.go
 				},
 			},
 		},
@@ -59,7 +119,7 @@ func loadMetricsBuilderConfig(t *testing.T, name string) MetricsBuilderConfig {
 	sub, err := cm.Sub(name)
 	require.NoError(t, err)
 	cfg := DefaultMetricsBuilderConfig()
-	require.NoError(t, sub.Unmarshal(&cfg))
+	require.NoError(t, sub.Unmarshal(&cfg, confmap.WithIgnoreUnused()))
 	return cfg
 }
 
@@ -75,13 +135,29 @@ func TestResourceAttributesConfig(t *testing.T) {
 		{
 			name: "all_set",
 			want: ResourceAttributesConfig{
+<<<<<<<< HEAD:receiver/githubreceiver/internal/metadata/generated_config_test.go
+				OrganizationName: ResourceAttributeConfig{Enabled: true},
+				VcsVendorName:    ResourceAttributeConfig{Enabled: true},
+|||||||| 6b1d3dd2c0c:receiver/gitproviderreceiver/internal/metadata/generated_config_test.go
+				GitVendorName:    ResourceAttributeConfig{Enabled: true},
+				OrganizationName: ResourceAttributeConfig{Enabled: true},
+========
 				NtpHost: ResourceAttributeConfig{Enabled: true},
+>>>>>>>> v0.137.0:receiver/ntpreceiver/internal/metadata/generated_config_test.go
 			},
 		},
 		{
 			name: "none_set",
 			want: ResourceAttributesConfig{
+<<<<<<<< HEAD:receiver/githubreceiver/internal/metadata/generated_config_test.go
+				OrganizationName: ResourceAttributeConfig{Enabled: false},
+				VcsVendorName:    ResourceAttributeConfig{Enabled: false},
+|||||||| 6b1d3dd2c0c:receiver/gitproviderreceiver/internal/metadata/generated_config_test.go
+				GitVendorName:    ResourceAttributeConfig{Enabled: false},
+				OrganizationName: ResourceAttributeConfig{Enabled: false},
+========
 				NtpHost: ResourceAttributeConfig{Enabled: false},
+>>>>>>>> v0.137.0:receiver/ntpreceiver/internal/metadata/generated_config_test.go
 			},
 		},
 	}

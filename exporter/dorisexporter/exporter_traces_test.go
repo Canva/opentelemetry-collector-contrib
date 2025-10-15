@@ -4,7 +4,7 @@
 package dorisexporter // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/dorisexporter"
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -15,7 +15,8 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
+	"go.uber.org/zap"
 )
 
 func TestPushTraceData(t *testing.T) {
@@ -29,9 +30,9 @@ func TestPushTraceData(t *testing.T) {
 	err = config.Validate()
 	require.NoError(t, err)
 
-	exporter := newTracesExporter(nil, config, componenttest.NewNopTelemetrySettings())
+	exporter := newTracesExporter(zap.NewNop(), config, componenttest.NewNopTelemetrySettings())
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	client, err := createDorisHTTPClient(ctx, config, nil, componenttest.NewNopTelemetrySettings())
 	require.NoError(t, err)
@@ -57,7 +58,7 @@ func TestPushTraceData(t *testing.T) {
 		assert.Equal(t, http.ErrServerClosed, err)
 	}()
 
-	err0 := fmt.Errorf("Not Started")
+	err0 := errors.New("Not Started")
 	for i := 0; err0 != nil && i < 10; i++ { // until server started
 		err0 = exporter.pushTraceData(ctx, simpleTraces(10))
 		time.Sleep(100 * time.Millisecond)
@@ -90,7 +91,7 @@ func simpleTraces(count int) ptrace.Traces {
 		s.SetKind(ptrace.SpanKindInternal)
 		s.SetStartTimestamp(pcommon.NewTimestampFromTime(timestamp))
 		s.SetEndTimestamp(pcommon.NewTimestampFromTime(timestamp.Add(time.Minute)))
-		s.Attributes().PutStr(semconv.AttributeServiceName, "v")
+		s.Attributes().PutStr(string(semconv.ServiceNameKey), "v")
 		s.Status().SetMessage("error")
 		s.Status().SetCode(ptrace.StatusCodeError)
 		event := s.Events().AppendEmpty()

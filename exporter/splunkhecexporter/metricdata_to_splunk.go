@@ -52,17 +52,17 @@ func sanitizeFloat(value float64) any {
 }
 
 func mapMetricToSplunkEvent(res pcommon.Resource, m pmetric.Metric, config *Config, logger *zap.Logger) []*splunk.Event {
-	sourceKey := config.HecToOtelAttrs.Source
-	sourceTypeKey := config.HecToOtelAttrs.SourceType
-	indexKey := config.HecToOtelAttrs.Index
-	hostKey := config.HecToOtelAttrs.Host
+	sourceKey := config.OtelAttrsToHec.Source
+	sourceTypeKey := config.OtelAttrsToHec.SourceType
+	indexKey := config.OtelAttrsToHec.Index
+	hostKey := config.OtelAttrsToHec.Host
 	host := unknownHostName
 	source := config.Source
 	sourceType := config.SourceType
 	index := config.Index
 	commonFields := map[string]any{}
 
-	res.Attributes().Range(func(k string, v pcommon.Value) bool {
+	for k, v := range res.Attributes().All() {
 		switch k {
 		case hostKey:
 			host = v.Str()
@@ -77,8 +77,7 @@ func mapMetricToSplunkEvent(res pcommon.Resource, m pmetric.Metric, config *Conf
 		default:
 			commonFields[k] = v.AsString()
 		}
-		return true
-	})
+	}
 	metricFieldName := splunkMetricValue + ":" + m.Name()
 	//exhaustive:enforce
 	switch m.Type() {
@@ -220,7 +219,7 @@ func mapMetricToSplunkEvent(res pcommon.Resource, m pmetric.Metric, config *Conf
 	}
 }
 
-func createEvent(timestamp pcommon.Timestamp, host string, source string, sourceType string, index string, fields map[string]any) *splunk.Event {
+func createEvent(timestamp pcommon.Timestamp, host, source, sourceType, index string, fields map[string]any) *splunk.Event {
 	return &splunk.Event{
 		Time:       timestampToSecondsWithMillisecondPrecision(timestamp),
 		Host:       host,
@@ -247,10 +246,9 @@ func copyEventWithoutValues(event *splunk.Event) *splunk.Event {
 }
 
 func populateAttributes(fields map[string]any, attributeMap pcommon.Map) {
-	attributeMap.Range(func(k string, v pcommon.Value) bool {
+	for k, v := range attributeMap.All() {
 		fields[k] = v.AsString()
-		return true
-	})
+	}
 }
 
 func cloneMap(fields map[string]any) map[string]any {
