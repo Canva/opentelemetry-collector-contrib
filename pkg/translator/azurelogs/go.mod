@@ -12,7 +12,6 @@ require (
 	go.opentelemetry.io/collector/component v1.43.0
 	go.opentelemetry.io/collector/pdata v1.43.0
 	go.opentelemetry.io/otel v1.38.0
-	go.uber.org/goleak v1.3.0
 	go.uber.org/zap v1.27.0
 )
 

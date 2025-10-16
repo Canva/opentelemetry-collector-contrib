@@ -5,10 +5,12 @@ go 1.24.0
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/exp/metrics v0.137.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.137.0
 	github.com/puzpuzpuz/xsync/v3 v3.5.1
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.43.0
 	go.opentelemetry.io/collector/component/componenttest v0.137.0
+	go.opentelemetry.io/collector/config/configtelemetry v0.137.0
 	go.opentelemetry.io/collector/confmap v1.43.0
 	go.opentelemetry.io/collector/confmap/xconfmap v0.137.0
 	go.opentelemetry.io/collector/consumer v1.43.0

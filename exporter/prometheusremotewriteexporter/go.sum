@@ -338,6 +338,8 @@ go.opentelemetry.io/collector/config/configoptional v1.43.0 h1:u/MCeLUawXINEi05V
 go.opentelemetry.io/collector/config/configoptional v1.43.0/go.mod h1:vdhEmJCpL4nQx2fETr3Bvg9Uy14IwThxL5/g8Mvo/A8=
 go.opentelemetry.io/collector/config/configretry v1.43.0 h1:Va5pDNL0TOzqjLdJZ4xxQN9EggMSGVmxXBa+M6UEG30=
 go.opentelemetry.io/collector/config/configretry v1.43.0/go.mod h1:ZSTYqAJCq4qf+/4DGoIxCElDIl5yHt8XxEbcnpWBbMM=
+go.opentelemetry.io/collector/config/configtelemetry v0.137.0 h1:+QwfFnMwb5UatXYhZ+sY5dvBmqZsfnC3093nwgAgw8A=
+go.opentelemetry.io/collector/config/configtelemetry v0.137.0/go.mod h1:Xjw2+DpNLjYtx596EHSWBy0dNQRiJ2H+BlWU907lO40=
 go.opentelemetry.io/collector/config/configtls v1.43.0 h1:DYbI0kOp4u7b0RA9B4b19ftCCkszSpL1kZqQVOn/tjc=
 go.opentelemetry.io/collector/config/configtls v1.43.0/go.mod h1:i+v6g4DvnYtq74GS1QV/adgVg7NG2HfL42G2QwkjZjg=
 go.opentelemetry.io/collector/confmap v1.43.0 h1:QVAnbS7A+2Ra61xsuG355vhlW6uOMaKWysrwLQzDUz4=

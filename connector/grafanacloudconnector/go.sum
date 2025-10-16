@@ -63,6 +63,8 @@ go.opentelemetry.io/collector/component v1.43.0 h1:9dyOmV0UuIhrNSASMeDH125jhfv7+
 go.opentelemetry.io/collector/component v1.43.0/go.mod h1:Pw3qM5HhgnSMpebNRUiiJuEiXxZyHq83vl7wXqxD8hU=
 go.opentelemetry.io/collector/component/componenttest v0.137.0 h1:QC9MZsYyzQqN9qMlleJb78wf7FeCjbr4jLeCuNlKHLU=
 go.opentelemetry.io/collector/component/componenttest v0.137.0/go.mod h1:JuiX9pv7qE5G8keihhjM66LeidryEnziPND0sXuK9PQ=
+go.opentelemetry.io/collector/config/configtelemetry v0.137.0 h1:+QwfFnMwb5UatXYhZ+sY5dvBmqZsfnC3093nwgAgw8A=
+go.opentelemetry.io/collector/config/configtelemetry v0.137.0/go.mod h1:Xjw2+DpNLjYtx596EHSWBy0dNQRiJ2H+BlWU907lO40=
 go.opentelemetry.io/collector/confmap v1.43.0 h1:QVAnbS7A+2Ra61xsuG355vhlW6uOMaKWysrwLQzDUz4=
 go.opentelemetry.io/collector/confmap v1.43.0/go.mod h1:N5GZpFCmwD1GynDu3IWaZW5Ycfc/7YxSU0q1/E3vLdg=
 go.opentelemetry.io/collector/confmap/xconfmap v0.137.0 h1:IKzD6w4YuvBi6GvxZfhz7SJR6GR1UpSQRuxtx20/+9U=
