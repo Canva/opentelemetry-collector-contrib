@@ -4,7 +4,6 @@
 package filestatsreceiver
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,14 +11,16 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/receiver/receivertest"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filestatsreceiver/internal/metadata"
 )
 
 func Test_Scrape(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfg := newDefaultConfig().(*Config)
 	cfg.Include = filepath.Join(tmpDir, "*.log")
-	s := newScraper(cfg, receivertest.NewNopSettings())
-	metrics, err := s.scrape(context.Background())
+	s := newScraper(cfg, receivertest.NewNopSettings(metadata.Type))
+	metrics, err := s.scrape(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, 0, metrics.ResourceMetrics().Len())
 	logFile := filepath.Join(tmpDir, "my.log")
@@ -34,7 +35,7 @@ func Test_Scrape(t *testing.T) {
 	matches, err := doublestar.FilepathGlob(cfg.Include)
 	require.NoError(t, err)
 	require.Equal(t, []string{logFile}, matches)
-	metrics, err = s.scrape(context.Background())
+	metrics, err = s.scrape(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, 1, metrics.ResourceMetrics().Len())
 	require.Equal(t, 2, metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics().Len())
@@ -54,8 +55,8 @@ func Test_Scrape_All(t *testing.T) {
 	cfg.Metrics.FileCtime.Enabled = true
 	cfg.Metrics.FileCount.Enabled = true
 
-	s := newScraper(cfg, receivertest.NewNopSettings())
-	metrics, err := s.scrape(context.Background())
+	s := newScraper(cfg, receivertest.NewNopSettings(metadata.Type))
+	metrics, err := s.scrape(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, 1, metrics.ResourceMetrics().Len())
 	fileCount := metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics().At(0)
@@ -73,7 +74,7 @@ func Test_Scrape_All(t *testing.T) {
 	matches, err := doublestar.FilepathGlob(cfg.Include)
 	require.NoError(t, err)
 	require.Equal(t, []string{logFile}, matches)
-	metrics, err = s.scrape(context.Background())
+	metrics, err = s.scrape(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, 2, metrics.ResourceMetrics().Len())
 	require.Equal(t, 4, metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics().Len())

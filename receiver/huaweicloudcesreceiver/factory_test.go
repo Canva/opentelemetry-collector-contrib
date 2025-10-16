@@ -4,7 +4,6 @@
 package huaweicloudcesreceiver
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -13,6 +12,8 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/receivertest"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/huaweicloudcesreceiver/internal/metadata"
 )
 
 func TestNewFactory(t *testing.T) {
@@ -37,7 +38,7 @@ func TestCreateMetricsReceiver(t *testing.T) {
 	rConfig.InitialDelay = time.Second
 
 	nextConsumer := new(consumertest.MetricsSink)
-	receiver, err := factory.CreateMetrics(context.Background(), receivertest.NewNopSettings(), config, nextConsumer)
+	receiver, err := factory.CreateMetrics(t.Context(), receivertest.NewNopSettings(metadata.Type), config, nextConsumer)
 	assert.NoError(t, err)
 	assert.NotNil(t, receiver)
 }

@@ -5,8 +5,8 @@
 // JSON documents.
 //
 // The JSON parsing in Elasticsearch does not support parsing JSON documents
-// with duplicate fields. The fields in the docuemt can be sort and duplicate entries
-// can be removed before serializing. Deduplication ensures that ambigious
+// with duplicate fields. The fields in the document can be sort and duplicate entries
+// can be removed before serializing. Deduplication ensures that ambiguous
 // events can still be indexed.
 //
 // With attributes map encoded as a list of key value
@@ -143,7 +143,7 @@ func (doc *Document) Add(key string, v Value) {
 }
 
 // AddString adds a string to the document.
-func (doc *Document) AddString(key string, v string) {
+func (doc *Document) AddString(key, v string) {
 	if v != "" {
 		doc.Add(key, StringValue(v))
 	}
@@ -196,11 +196,27 @@ func (doc *Document) AddAttribute(key string, attribute pcommon.Value) {
 
 // AddEvents converts and adds span events to the document.
 func (doc *Document) AddEvents(key string, events ptrace.SpanEventSlice) {
-	for i := 0; i < events.Len(); i++ {
-		e := events.At(i)
+	for _, e := range events.All() {
 		doc.AddTimestamp(flattenKey(key, e.Name()+".time"), e.Timestamp())
 		doc.AddAttributes(flattenKey(key, e.Name()), e.Attributes())
 	}
+}
+
+// AddLinks adds a slice of span links to the document.
+func (doc *Document) AddLinks(key string, links ptrace.SpanLinkSlice) {
+	if links.Len() == 0 {
+		return
+	}
+
+	linkValues := make([]Value, links.Len())
+	for i, link := range links.All() {
+		linkObj := Document{}
+		linkObj.AddTraceID("trace_id", link.TraceID())
+		linkObj.AddSpanID("span_id", link.SpanID())
+		linkValues[i] = Value{kind: KindObject, doc: linkObj}
+	}
+
+	doc.Add(key, ArrValue(linkValues...))
 }
 
 func (doc *Document) sort() {
@@ -249,6 +265,9 @@ func (doc *Document) Dedup(appendValueOnConflict bool) {
 			doc.sort()
 		}
 	}
+	if renamed {
+		doc.sort()
+	}
 
 	// 3. mark duplicates as 'ignore'
 	//
@@ -274,12 +293,13 @@ func newJSONVisitor(w io.Writer) *json.Visitor {
 	return v
 }
 
-// Serialize writes the document to the given writer. The serializer will create nested objects if dedot is true.
-//
-// NOTE: The documented MUST be sorted if dedot is true.
-func (doc *Document) Serialize(w io.Writer, dedot bool, otel bool) error {
+// Serialize writes the document to the given writer. The document fields will be
+// deduplicated and, if dedot is true, turned into nested objects prior to
+// serialization.
+func (doc *Document) Serialize(w io.Writer, dedot bool) error {
+	doc.Dedup()
 	v := newJSONVisitor(w)
-	return doc.iterJSON(v, dedot, otel)
+	return doc.iterJSON(v, dedot)
 }
 
 func (doc *Document) iterJSON(v *json.Visitor, dedot bool, otel bool) error {
@@ -355,7 +375,7 @@ func (doc *Document) iterJSONDedot(w *json.Visitor, otel bool) error {
 
 			// remove levels and append write list of outstanding '}' into the writer
 			if L > 0 {
-				for delta := objPrefix[L:]; len(delta) > 0; {
+				for delta := objPrefix[L:]; delta != ""; {
 					idx := strings.IndexByte(delta, '.')
 					if idx < 0 {
 						break
@@ -549,12 +569,12 @@ func (v *Value) iterJSON(w *json.Visitor, dedot bool, otel bool) error {
 		if len(v.doc.fields) == 0 {
 			return w.OnNil()
 		}
-		return v.doc.iterJSON(w, dedot, otel)
+		return v.doc.iterJSON(w, dedot)
 	case KindUnflattenableObject:
 		if len(v.doc.fields) == 0 {
 			return w.OnNil()
 		}
-		return v.doc.iterJSON(w, true, otel)
+		return v.doc.iterJSON(w, true)
 	case KindArr:
 		if err := w.OnArrayStart(-1, structform.AnyType); err != nil {
 			return err
@@ -578,21 +598,20 @@ func arrFromAttributes(aa pcommon.Slice) []Value {
 	}
 
 	values := make([]Value, aa.Len())
-	for i := 0; i < aa.Len(); i++ {
-		values[i] = ValueFromAttribute(aa.At(i))
+	for i, a := range aa.All() {
+		values[i] = ValueFromAttribute(a)
 	}
 	return values
 }
 
 func appendAttributeFields(fields []field, path string, am pcommon.Map) []field {
-	am.Range(func(k string, val pcommon.Value) bool {
+	for k, val := range am.All() {
 		fields = appendAttributeValue(fields, path, k, val)
-		return true
-	})
+	}
 	return fields
 }
 
-func appendAttributeValue(fields []field, path string, key string, attr pcommon.Value) []field {
+func appendAttributeValue(fields []field, path, key string, attr pcommon.Value) []field {
 	if attr.Type() == pcommon.ValueTypeEmpty {
 		return fields
 	}

@@ -4,7 +4,6 @@
 package filelogreceiver
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -21,6 +20,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
+	"go.opentelemetry.io/collector/confmap/xconfmap"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pipeline"
@@ -35,6 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/input/file"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/json"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/regex"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver/internal/metadata"
 )
 
 func TestDefaultConfig(t *testing.T) {
@@ -55,7 +56,7 @@ func TestLoadConfig(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, sub.Unmarshal(cfg))
 
-	assert.NoError(t, component.ValidateConfig(cfg))
+	assert.NoError(t, xconfmap.Validate(cfg))
 	assert.Equal(t, testdataConfigYaml(), cfg)
 }
 
@@ -66,8 +67,8 @@ func TestCreateWithInvalidInputConfig(t *testing.T) {
 	cfg.InputConfig.StartAt = "middle"
 
 	_, err := NewFactory().CreateLogs(
-		context.Background(),
-		receivertest.NewNopSettings(),
+		t.Context(),
+		receivertest.NewNopSettings(metadata.Type),
 		cfg,
 		new(consumertest.LogsSink),
 	)
@@ -83,9 +84,9 @@ func TestReadStaticFile(t *testing.T) {
 	sink := new(consumertest.LogsSink)
 	cfg := testdataConfigYaml()
 
-	rcvr, err := f.CreateLogs(context.Background(), receivertest.NewNopSettings(), cfg, sink)
+	rcvr, err := f.CreateLogs(t.Context(), receivertest.NewNopSettings(metadata.Type), cfg, sink)
 	require.NoError(t, err, "failed to create receiver")
-	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.NoError(t, rcvr.Start(t.Context(), componenttest.NewNopHost()))
 
 	expectedLogs := []plog.Logs{}
 	// Build the expected set by using adapter.Converter to translate entries
@@ -127,7 +128,7 @@ func TestReadStaticFile(t *testing.T) {
 			),
 		)
 	}
-	require.NoError(t, rcvr.Shutdown(context.Background()))
+	require.NoError(t, rcvr.Shutdown(t.Context()))
 }
 
 func TestReadRotatingFiles(t *testing.T) {
@@ -174,9 +175,9 @@ func (rt *rotationTest) Run(t *testing.T) {
 	fileName := filepath.Join(tempDir, "test.log")
 	backupFileName := filepath.Join(tempDir, "test-backup.log")
 
-	rcvr, err := f.CreateLogs(context.Background(), receivertest.NewNopSettings(), cfg, sink)
+	rcvr, err := f.CreateLogs(t.Context(), receivertest.NewNopSettings(metadata.Type), cfg, sink)
 	require.NoError(t, err, "failed to create receiver")
-	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.NoError(t, rcvr.Start(t.Context(), componenttest.NewNopHost()))
 
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0o600)
 	defer func() {
@@ -222,7 +223,7 @@ func (rt *rotationTest) Run(t *testing.T) {
 		msg := fmt.Sprintf("This is a simple log line with the number %3d", i)
 
 		// ... and write the logs lines to the actual file consumed by receiver.
-		_, err := file.WriteString(fmt.Sprintf("2020-08-25 %s\n", msg))
+		_, err := fmt.Fprintf(file, "2020-08-25 %s\n", msg)
 		require.NoError(t, err)
 		time.Sleep(time.Millisecond)
 	}
@@ -234,7 +235,7 @@ func (rt *rotationTest) Run(t *testing.T) {
 
 	// TODO: Figure out a nice way to assert each logs entry content.
 	// require.Equal(t, expectedLogs, sink.AllLogs())
-	require.NoError(t, rcvr.Shutdown(context.Background()))
+	require.NoError(t, rcvr.Shutdown(t.Context()))
 }
 
 func expectNLogs(sink *consumertest.LogsSink, expected int) func() bool {
@@ -257,6 +258,10 @@ func testdataConfigYaml() *FileLogConfig {
 						timeCfg := helper.NewTimeParser()
 						timeCfg.Layout = "%Y-%m-%d"
 						timeCfg.ParseFrom = &timeField
+						// The Validate method modifies private fields on the helper.TimeParser
+						// object that need to be set for later comparison.
+						// If validation fails, the test will fail, so discard the error.
+						_ = timeCfg.Validate()
 						cfg.TimeParser = &timeCfg
 						return cfg
 					}(),
@@ -362,7 +367,7 @@ func (g *fileLogGenerator) Stop() {
 
 func (g *fileLogGenerator) Generate() []receivertest.UniqueIDAttrVal {
 	id := receivertest.UniqueIDAttrVal(strconv.FormatInt(atomic.AddInt64(&g.sequenceNum, 1), 10))
-	logLine := fmt.Sprintf(`{"ts": "%s", "log": "log-%s", "%s": "%s"}`, time.Now().Format(time.RFC3339), id,
+	logLine := fmt.Sprintf(`{"ts": "%s", "log": "log-%s", "%s": "%s"}`, time.Now().Format(time.RFC3339), id, //nolint:gocritic //sprintfQuotedString for JSON
 		receivertest.UniqueIDAttrName, id)
 	_, err := g.tmpFile.WriteString(logLine + "\n")
 	require.NoError(g.t, err)

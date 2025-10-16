@@ -24,15 +24,16 @@ import (
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumertest"
-	"go.opentelemetry.io/collector/extension/experimental/storage"
+	"go.opentelemetry.io/collector/extension/xextension/storage"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/receiver/receivertest"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 	"go.uber.org/zap/zaptest"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/plogtest"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/mongodbatlasreceiver/internal"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/mongodbatlasreceiver/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/mongodbatlasreceiver/internal/model"
 )
 
@@ -398,7 +399,7 @@ func TestHandleRequest(t *testing.T) {
 				consumer = &consumertest.LogsSink{}
 			}
 
-			set := receivertest.NewNopSettings()
+			set := receivertest.NewNopSettings(metadata.Type)
 			set.Logger = zaptest.NewLogger(t)
 			ar, err := newAlertsReceiver(set, &Config{Alerts: AlertConfig{Secret: "some_secret"}}, consumer)
 			require.NoError(t, err, "Failed to create alerts receiver")
@@ -582,22 +583,21 @@ func TestAlertsRetrieval(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			logSink := &consumertest.LogsSink{}
-			alertsRcvr, err := newAlertsReceiver(receivertest.NewNopSettings(), tc.config(), logSink)
+			alertsRcvr, err := newAlertsReceiver(receivertest.NewNopSettings(metadata.Type), tc.config(), logSink)
 			require.NoError(t, err)
 			alertsRcvr.client = tc.client()
 
-			err = alertsRcvr.Start(context.Background(), componenttest.NewNopHost(), storage.NewNopClient())
+			err = alertsRcvr.Start(t.Context(), componenttest.NewNopHost(), storage.NewNopClient())
 			require.NoError(t, err)
 
 			require.Eventually(t, func() bool {
 				return logSink.LogRecordCount() > 0
 			}, 10*time.Second, 10*time.Millisecond)
 
-			require.NoError(t, alertsRcvr.Shutdown(context.Background()))
+			require.NoError(t, alertsRcvr.Shutdown(t.Context()))
 			logs := logSink.AllLogs()[0]
 
 			tc.validateEntries(t, logs)
@@ -607,7 +607,7 @@ func TestAlertsRetrieval(t *testing.T) {
 
 func TestAlertPollingExclusions(t *testing.T) {
 	logSink := &consumertest.LogsSink{}
-	alertsRcvr, err := newAlertsReceiver(receivertest.NewNopSettings(), &Config{
+	alertsRcvr, err := newAlertsReceiver(receivertest.NewNopSettings(metadata.Type), &Config{
 		Alerts: AlertConfig{
 			Enabled: true,
 			Mode:    alertModePoll,
@@ -625,14 +625,14 @@ func TestAlertPollingExclusions(t *testing.T) {
 	require.NoError(t, err)
 	alertsRcvr.client = testClient()
 
-	err = alertsRcvr.Start(context.Background(), componenttest.NewNopHost(), storage.NewNopClient())
+	err = alertsRcvr.Start(t.Context(), componenttest.NewNopHost(), storage.NewNopClient())
 	require.NoError(t, err)
 
 	require.Never(t, func() bool {
 		return logSink.LogRecordCount() > 0
 	}, 3*time.Second, 10*time.Millisecond)
 
-	require.NoError(t, alertsRcvr.Shutdown(context.Background()))
+	require.NoError(t, alertsRcvr.Shutdown(t.Context()))
 }
 
 func testClient() *mockAlertsClient {

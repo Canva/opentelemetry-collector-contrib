@@ -5,7 +5,6 @@ package skywalkingreceiver
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -23,6 +22,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	common "skywalking.apache.org/repo/goapi/collect/common/v3"
 	agent "skywalking.apache.org/repo/goapi/collect/language/agent/v3"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/skywalkingreceiver/internal/metadata"
 )
 
 var skywalkingReceiver = component.MustNewIDWithName("skywalking", "receiver_test")
@@ -74,13 +75,13 @@ func TestStartAndShutdown(t *testing.T) {
 	}
 	sink := new(consumertest.TracesSink)
 
-	set := receivertest.NewNopSettings()
+	set := receivertest.NewNopSettings(metadata.Type)
 	set.ID = skywalkingReceiver
 	sr := newSkywalkingReceiver(config, set)
 	err := sr.registerTraceConsumer(sink)
 	require.NoError(t, err)
-	require.NoError(t, sr.Start(context.Background(), componenttest.NewNopHost()))
-	t.Cleanup(func() { require.NoError(t, sr.Shutdown(context.Background())) })
+	require.NoError(t, sr.Start(t.Context(), componenttest.NewNopHost()))
+	require.NoError(t, sr.Shutdown(t.Context()))
 }
 
 func TestGRPCReception(t *testing.T) {
@@ -90,14 +91,15 @@ func TestGRPCReception(t *testing.T) {
 
 	sink := new(consumertest.TracesSink)
 
-	set := receivertest.NewNopSettings()
+	set := receivertest.NewNopSettings(metadata.Type)
 	set.ID = skywalkingReceiver
 	mockSwReceiver := newSkywalkingReceiver(config, set)
 	err := mockSwReceiver.registerTraceConsumer(sink)
 	require.NoError(t, err)
-	require.NoError(t, mockSwReceiver.Start(context.Background(), componenttest.NewNopHost()))
-
-	t.Cleanup(func() { require.NoError(t, mockSwReceiver.Shutdown(context.Background())) })
+	require.NoError(t, mockSwReceiver.Start(t.Context(), componenttest.NewNopHost()))
+	defer func() {
+		require.NoError(t, mockSwReceiver.Shutdown(t.Context()))
+	}()
 	conn, err := grpc.NewClient(fmt.Sprintf("0.0.0.0:%d", config.CollectorGRPCPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 	defer conn.Close()
@@ -110,7 +112,7 @@ func TestGRPCReception(t *testing.T) {
 
 	// skywalking agent client send trace data to otel/skywalkingreceiver
 	client := agent.NewTraceSegmentReportServiceClient(conn)
-	commands, err := client.CollectInSync(context.Background(), segmentCollection)
+	commands, err := client.CollectInSync(t.Context(), segmentCollection)
 	if err != nil {
 		t.Fatalf("cannot send data in sync mode: %v", err)
 	}
@@ -129,13 +131,15 @@ func TestHttpReception(t *testing.T) {
 
 	sink := new(consumertest.TracesSink)
 
-	set := receivertest.NewNopSettings()
+	set := receivertest.NewNopSettings(metadata.Type)
 	set.ID = skywalkingReceiver
 	mockSwReceiver := newSkywalkingReceiver(config, set)
 	err := mockSwReceiver.registerTraceConsumer(sink)
 	require.NoError(t, err)
-	require.NoError(t, mockSwReceiver.Start(context.Background(), componenttest.NewNopHost()))
-	t.Cleanup(func() { require.NoError(t, mockSwReceiver.Shutdown(context.Background())) })
+	require.NoError(t, mockSwReceiver.Start(t.Context(), componenttest.NewNopHost()))
+	defer func() {
+		require.NoError(t, mockSwReceiver.Shutdown(t.Context()))
+	}()
 	req, err := http.NewRequest(http.MethodPost, "http://127.0.0.1:12800/v3/segments", bytes.NewBuffer(traceJSON))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")

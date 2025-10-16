@@ -4,7 +4,7 @@
 package dorisexporter // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/dorisexporter"
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.uber.org/zap"
 )
 
 func TestPushMetricData(t *testing.T) {
@@ -28,9 +29,9 @@ func TestPushMetricData(t *testing.T) {
 	err = config.Validate()
 	require.NoError(t, err)
 
-	exporter := newMetricsExporter(nil, config, componenttest.NewNopTelemetrySettings())
+	exporter := newMetricsExporter(zap.NewNop(), config, componenttest.NewNopTelemetrySettings())
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	client, err := createDorisHTTPClient(ctx, config, nil, componenttest.NewNopTelemetrySettings())
 	require.NoError(t, err)
@@ -60,7 +61,7 @@ func TestPushMetricData(t *testing.T) {
 		assert.Equal(t, http.ErrServerClosed, err)
 	}()
 
-	err0 := fmt.Errorf("Not Started")
+	err0 := errors.New("Not Started")
 	for i := 0; err0 != nil && i < 10; i++ { // until server started
 		err0 = exporter.pushMetricData(ctx, simpleMetrics(10, map[pmetric.MetricType]struct{}{
 			pmetric.MetricTypeGauge:                {},

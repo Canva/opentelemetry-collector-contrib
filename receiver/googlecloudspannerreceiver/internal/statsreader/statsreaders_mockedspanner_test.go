@@ -4,7 +4,6 @@
 package statsreader
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -33,7 +32,7 @@ func createMetricsMetadata(query string) *metadata.MetricsMetadata {
 	return createMetricsMetadataFromTimestampColumn(query, "INTERVAL_END")
 }
 
-func createMetricsMetadataFromTimestampColumn(query string, timestampColumn string) *metadata.MetricsMetadata {
+func createMetricsMetadataFromTimestampColumn(query, timestampColumn string) *metadata.MetricsMetadata {
 	labelValueMetadata, _ := metadata.NewLabelValueMetadata("metric_label", "METRIC_LABEL",
 		metadata.StringValueType)
 	// Labels
@@ -56,7 +55,7 @@ func createMetricsMetadataFromTimestampColumn(query string, timestampColumn stri
 	}
 }
 
-func createCurrentStatsReaderWithCorruptedMetadata(client *spanner.Client) Reader { //nolint
+func createCurrentStatsReaderWithCorruptedMetadata(client *spanner.Client) Reader {
 	query := "SELECT * FROM STATS"
 	databaseID := datasource.NewDatabaseID(projectID, instanceID, databaseName)
 	databaseFromClient := datasource.NewDatabaseFromClient(client, databaseID)
@@ -65,7 +64,7 @@ func createCurrentStatsReaderWithCorruptedMetadata(client *spanner.Client) Reade
 		createMetricsMetadataFromTimestampColumn(query, "NOT_EXISTING"), ReaderConfig{})
 }
 
-func createCurrentStatsReader(client *spanner.Client) Reader { //nolint
+func createCurrentStatsReader(client *spanner.Client) Reader {
 	query := "SELECT * FROM STATS"
 	databaseID := datasource.NewDatabaseID(projectID, instanceID, databaseName)
 	databaseFromClient := datasource.NewDatabaseFromClient(client, databaseID)
@@ -73,7 +72,7 @@ func createCurrentStatsReader(client *spanner.Client) Reader { //nolint
 	return newCurrentStatsReader(zap.NewNop(), databaseFromClient, createMetricsMetadata(query), ReaderConfig{})
 }
 
-func createCurrentStatsReaderWithMaxRowsLimit(client *spanner.Client) Reader { //nolint
+func createCurrentStatsReaderWithMaxRowsLimit(client *spanner.Client) Reader {
 	query := "SELECT * FROM STATS"
 	databaseID := datasource.NewDatabaseID(projectID, instanceID, databaseName)
 	databaseFromClient := datasource.NewDatabaseFromClient(client, databaseID)
@@ -84,7 +83,7 @@ func createCurrentStatsReaderWithMaxRowsLimit(client *spanner.Client) Reader { /
 	return newCurrentStatsReader(zap.NewNop(), databaseFromClient, createMetricsMetadata(query), config)
 }
 
-func createIntervalStatsReaderWithCorruptedMetadata(client *spanner.Client, backfillEnabled bool) Reader { //nolint
+func createIntervalStatsReaderWithCorruptedMetadata(client *spanner.Client, backfillEnabled bool) Reader {
 	query := "SELECT * FROM STATS WHERE INTERVAL_END = @pullTimestamp"
 	databaseID := datasource.NewDatabaseID(projectID, instanceID, databaseName)
 	databaseFromClient := datasource.NewDatabaseFromClient(client, databaseID)
@@ -96,7 +95,7 @@ func createIntervalStatsReaderWithCorruptedMetadata(client *spanner.Client, back
 		createMetricsMetadataFromTimestampColumn(query, "NOT_EXISTING"), config)
 }
 
-func createIntervalStatsReader(client *spanner.Client, backfillEnabled bool) Reader { //nolint
+func createIntervalStatsReader(client *spanner.Client, backfillEnabled bool) Reader {
 	query := "SELECT * FROM STATS WHERE INTERVAL_END = @pullTimestamp"
 	databaseID := datasource.NewDatabaseID(projectID, instanceID, databaseName)
 	databaseFromClient := datasource.NewDatabaseFromClient(client, databaseID)
@@ -107,7 +106,7 @@ func createIntervalStatsReader(client *spanner.Client, backfillEnabled bool) Rea
 	return newIntervalStatsReader(zap.NewNop(), databaseFromClient, createMetricsMetadata(query), config)
 }
 
-func createIntervalStatsReaderWithMaxRowsLimit(client *spanner.Client, backfillEnabled bool) Reader { //nolint
+func createIntervalStatsReaderWithMaxRowsLimit(client *spanner.Client, backfillEnabled bool) Reader {
 	query := "SELECT * FROM STATS WHERE INTERVAL_END = @pullTimestamp"
 	databaseID := datasource.NewDatabaseID(projectID, instanceID, databaseName)
 	databaseFromClient := datasource.NewDatabaseFromClient(client, databaseID)
@@ -122,7 +121,7 @@ func createIntervalStatsReaderWithMaxRowsLimit(client *spanner.Client, backfillE
 func TestStatsReaders_Read(t *testing.T) {
 	t.Skip("Flaky test - See https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/6318")
 	timestamp := shiftToStartOfMinute(time.Now().UTC())
-	ctx := context.Background()
+	ctx := t.Context()
 	server, err := spannertest.NewServer(":0")
 	require.NoError(t, err)
 	defer server.Close()

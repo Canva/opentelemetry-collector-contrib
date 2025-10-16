@@ -5,6 +5,7 @@ package metadata // import "github.com/open-telemetry/opentelemetry-collector-co
 
 import (
 	"fmt"
+	maps0 "maps"
 	"strings"
 	"time"
 
@@ -55,6 +56,7 @@ func GetGenericMetadata(om *v1.ObjectMeta, resourceType string) *KubernetesMetad
 	metadata[constants.K8sKeyWorkLoadKind] = resourceType
 	metadata[constants.K8sKeyWorkLoadName] = om.Name
 	metadata[rType+".creation_timestamp"] = om.GetCreationTimestamp().Format(time.RFC3339)
+	metadata[constants.K8sKeyNamespaceName] = om.Namespace
 
 	for _, or := range om.OwnerReferences {
 		kind := strings.ToLower(or.Kind)
@@ -87,9 +89,7 @@ func getOTelEntityTypeFromKind(kind string) string {
 func MergeKubernetesMetadataMaps(maps ...map[metadataPkg.ResourceID]*KubernetesMetadata) map[metadataPkg.ResourceID]*KubernetesMetadata {
 	out := map[metadataPkg.ResourceID]*KubernetesMetadata{}
 	for _, m := range maps {
-		for id, km := range m {
-			out[id] = km
-		}
+		maps0.Copy(out, m)
 	}
 
 	return out

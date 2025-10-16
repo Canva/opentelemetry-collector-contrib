@@ -57,10 +57,6 @@ func mapLogRecordToSplunkEvent(res pcommon.Resource, lr plog.LogRecord, config *
 		return nil
 	}
 
-	// Manage the deprecation of HecToOtelAttrs config parameters.
-	// TODO: remove this once HecToOtelAttrs is removed from Config.
-	copyOtelAttrs(config)
-
 	host := unknownHostName
 	source := config.Source
 	sourcetype := config.SourceType
@@ -85,7 +81,7 @@ func mapLogRecordToSplunkEvent(res pcommon.Resource, lr plog.LogRecord, config *
 		fields[severityNumberKey] = lr.SeverityNumber()
 	}
 
-	res.Attributes().Range(func(k string, v pcommon.Value) bool {
+	for k, v := range res.Attributes().All() {
 		switch k {
 		case hostKey:
 			host = v.Str()
@@ -100,9 +96,8 @@ func mapLogRecordToSplunkEvent(res pcommon.Resource, lr plog.LogRecord, config *
 		default:
 			mergeValue(fields, k, v.AsRaw())
 		}
-		return true
-	})
-	lr.Attributes().Range(func(k string, v pcommon.Value) bool {
+	}
+	for k, v := range lr.Attributes().All() {
 		switch k {
 		case hostKey:
 			host = v.Str()
@@ -117,11 +112,15 @@ func mapLogRecordToSplunkEvent(res pcommon.Resource, lr plog.LogRecord, config *
 		default:
 			mergeValue(fields, k, v.AsRaw())
 		}
-		return true
-	})
+	}
+
+	ts := lr.Timestamp()
+	if ts == 0 {
+		ts = lr.ObservedTimestamp()
+	}
 
 	return &splunk.Event{
-		Time:       nanoTimestampToEpochMilliseconds(lr.Timestamp()),
+		Time:       nanoTimestampToEpochMilliseconds(ts),
 		Host:       host,
 		Source:     source,
 		SourceType: sourcetype,

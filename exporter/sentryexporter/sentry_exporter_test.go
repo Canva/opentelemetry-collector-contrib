@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	conventions "go.opentelemetry.io/collector/semconv/v1.18.0"
+	conventions "go.opentelemetry.io/otel/semconv/v1.18.0"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/traceutil"
 )
@@ -166,7 +166,7 @@ func generateOrphanSpansFromSpans(spans ...*sentry.Span) []*sentry.Span {
 	return orphanSpans
 }
 
-type SpanEventToSentryEventCases struct {
+type spanEventToSentryEventCases struct {
 	testName            string
 	errorMessage        string
 	errorType           string
@@ -221,7 +221,7 @@ func TestSpanEventToSentryEvent(t *testing.T) {
 
 	errorType := "mySampleType"
 	errorMessage := "Kernel Panic"
-	testCases := []SpanEventToSentryEventCases{
+	testCases := []spanEventToSentryEventCases{
 		{
 			testName:         "Exception Event with both exception type and message",
 			errorMessage:     errorMessage,
@@ -266,7 +266,6 @@ func TestSpanEventToSentryEvent(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		test := test
 		t.Run(test.testName, func(t *testing.T) {
 			sentryEvent, err := sentryEventFromError(test.errorMessage, test.errorType, test.sampleSentrySpan)
 			if sentryEvent != nil {
@@ -354,7 +353,7 @@ func TestSpanToSentrySpan(t *testing.T) {
 	})
 }
 
-type SpanDescriptorsCase struct {
+type spanDescriptorsCase struct {
 	testName string
 	// input
 	name     string
@@ -366,12 +365,12 @@ type SpanDescriptorsCase struct {
 }
 
 func TestGenerateSpanDescriptors(t *testing.T) {
-	testCases := []SpanDescriptorsCase{
+	testCases := []spanDescriptorsCase{
 		{
 			testName: "http-client",
 			name:     "/api/users/{user_id}",
 			attrs: map[string]any{
-				conventions.AttributeHTTPMethod: http.MethodGet,
+				string(conventions.HTTPMethodKey): http.MethodGet,
 			},
 			spanKind:    ptrace.SpanKindClient,
 			op:          "http.client",
@@ -381,7 +380,7 @@ func TestGenerateSpanDescriptors(t *testing.T) {
 			testName: "http-server",
 			name:     "/api/users/{user_id}",
 			attrs: map[string]any{
-				conventions.AttributeHTTPMethod: http.MethodPost,
+				string(conventions.HTTPMethodKey): http.MethodPost,
 			},
 			spanKind:    ptrace.SpanKindServer,
 			op:          "http.server",
@@ -391,7 +390,7 @@ func TestGenerateSpanDescriptors(t *testing.T) {
 			testName: "db-call-without-statement",
 			name:     "SET mykey 'Val'",
 			attrs: map[string]any{
-				conventions.AttributeDBSystem: "redis",
+				string(conventions.DBSystemKey): "redis",
 			},
 			spanKind:    ptrace.SpanKindClient,
 			op:          "db",
@@ -401,8 +400,8 @@ func TestGenerateSpanDescriptors(t *testing.T) {
 			testName: "db-call-with-statement",
 			name:     "mysql call",
 			attrs: map[string]any{
-				conventions.AttributeDBSystem:    "sqlite",
-				conventions.AttributeDBStatement: "SELECT * FROM table",
+				string(conventions.DBSystemKey):    "sqlite",
+				string(conventions.DBStatementKey): "SELECT * FROM table",
 			},
 			spanKind:    ptrace.SpanKindClient,
 			op:          "db",
@@ -412,7 +411,7 @@ func TestGenerateSpanDescriptors(t *testing.T) {
 			testName: "rpc",
 			name:     "grpc.test.EchoService/Echo",
 			attrs: map[string]any{
-				conventions.AttributeRPCService: "EchoService",
+				string(conventions.RPCServiceKey): "EchoService",
 			},
 			spanKind:    ptrace.SpanKindClient,
 			op:          "rpc",
@@ -471,7 +470,7 @@ func TestGenerateTagsFromAttributes(t *testing.T) {
 	assert.Equal(t, "321", intVal)
 }
 
-type SpanStatusCase struct {
+type spanStatusCase struct {
 	testName string
 	// input
 	spanStatus ptrace.Status
@@ -482,7 +481,7 @@ type SpanStatusCase struct {
 }
 
 func TestStatusFromSpanStatus(t *testing.T) {
-	testCases := []SpanStatusCase{
+	testCases := []spanStatusCase{
 		{
 			testName:   "with empty status",
 			spanStatus: ptrace.NewStatus(),
@@ -570,7 +569,7 @@ func TestStatusFromSpanStatus(t *testing.T) {
 	}
 }
 
-type ClassifyOrphanSpanTestCase struct {
+type classifyOrphanSpanTestCase struct {
 	testName string
 	// input
 	idMap          map[sentry.SpanID]sentry.SpanID
@@ -581,7 +580,7 @@ type ClassifyOrphanSpanTestCase struct {
 }
 
 func TestClassifyOrphanSpans(t *testing.T) {
-	testCases := []ClassifyOrphanSpanTestCase{
+	testCases := []classifyOrphanSpanTestCase{
 		{
 			testName:       "with no root spans",
 			idMap:          make(map[sentry.SpanID]sentry.SpanID),
@@ -662,12 +661,12 @@ func (t *mockTransport) SendEvents(transactions []*sentry.Event) {
 	t.called = true
 }
 
-func (t *mockTransport) Configure(_ sentry.ClientOptions) {}
-func (t *mockTransport) Flush(_ context.Context) bool {
+func (*mockTransport) Configure(sentry.ClientOptions) {}
+func (*mockTransport) Flush(context.Context) bool {
 	return true
 }
 
-type PushTraceDataTestCase struct {
+type pushTraceDataTestCase struct {
 	testName string
 	// input
 	td ptrace.Traces
@@ -676,7 +675,7 @@ type PushTraceDataTestCase struct {
 }
 
 func TestPushTraceData(t *testing.T) {
-	testCases := []PushTraceDataTestCase{
+	testCases := []pushTraceDataTestCase{
 		{
 			testName: "with no resources",
 			td:       ptrace.NewTraces(),
@@ -720,18 +719,18 @@ func TestPushTraceData(t *testing.T) {
 			transport := &mockTransport{
 				called: false,
 			}
-			s := &SentryExporter{
+			s := &sentryExporter{
 				transport: transport,
 			}
 
-			err := s.pushTraceData(context.Background(), test.td)
+			err := s.pushTraceData(t.Context(), test.td)
 			assert.NoError(t, err)
 			assert.Equal(t, test.called, transport.called)
 		})
 	}
 }
 
-type TransactionFromSpanMarshalEventTestCase struct {
+type transactionFromSpanMarshalEventTestCase struct {
 	testName string
 	// input
 	span *sentry.Span
@@ -742,7 +741,7 @@ type TransactionFromSpanMarshalEventTestCase struct {
 // This is a regression test for https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/13415
 // to make sure that `parent_span_id` is not included in the serialized context if it is not defined
 func TestTransactionContextFromSpanMarshalEvent(t *testing.T) {
-	testCases := []TransactionFromSpanMarshalEventTestCase{
+	testCases := []transactionFromSpanMarshalEventTestCase{
 		{
 			testName: "with parent span id",
 			span: &sentry.Span{

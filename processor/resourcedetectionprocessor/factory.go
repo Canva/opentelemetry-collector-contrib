@@ -19,6 +19,7 @@ import (
 	"go.opentelemetry.io/collector/processor/xprocessor"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/akamai"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/aws/ec2"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/aws/ecs"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/aws/eks"
@@ -27,14 +28,22 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/azure"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/azure/aks"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/consul"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/digitalocean"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/docker"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/dynatrace"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/env"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/gcp"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/heroku"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/hetzner"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/k8snode"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/kubeadm"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/openshift"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/oraclecloud"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/scaleway"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/system"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/upcloud"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/vultr"
 )
 
 var consumerCapabilities = consumer.Capabilities{MutatesData: true}
@@ -51,9 +60,11 @@ type factory struct {
 // NewFactory creates a new factory for ResourceDetection processor.
 func NewFactory() processor.Factory {
 	resourceProviderFactory := internal.NewProviderFactory(map[internal.DetectorType]internal.DetectorFactory{
+		akamai.TypeStr:           akamai.NewDetector,
 		aks.TypeStr:              aks.NewDetector,
 		azure.TypeStr:            azure.NewDetector,
 		consul.TypeStr:           consul.NewDetector,
+		digitalocean.TypeStr:     digitalocean.NewDetector,
 		docker.TypeStr:           docker.NewDetector,
 		ec2.TypeStr:              ec2.NewDetector,
 		ecs.TypeStr:              ecs.NewDetector,
@@ -63,9 +74,16 @@ func NewFactory() processor.Factory {
 		env.TypeStr:              env.NewDetector,
 		gcp.TypeStr:              gcp.NewDetector,
 		heroku.TypeStr:           heroku.NewDetector,
+		hetzner.TypeStr:          hetzner.NewDetector,
+		scaleway.TypeStr:         scaleway.NewDetector,
 		system.TypeStr:           system.NewDetector,
 		openshift.TypeStr:        openshift.NewDetector,
+		oraclecloud.TypeStr:      oraclecloud.NewDetector,
 		k8snode.TypeStr:          k8snode.NewDetector,
+		kubeadm.TypeStr:          kubeadm.NewDetector,
+		dynatrace.TypeStr:        dynatrace.NewDetector,
+		upcloud.TypeStr:          upcloud.NewDetector,
+		vultr.TypeStr:            vultr.NewDetector,
 	})
 
 	f := &factory{
@@ -197,7 +215,7 @@ func (f *factory) getResourceDetectionProcessor(
 	if oCfg.Attributes != nil {
 		params.Logger.Warn("You are using deprecated `attributes` option that will be removed soon; use `resource_attributes` instead, details on configuration: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor#migration-from-attributes-to-resource_attributes")
 	}
-	provider, err := f.getResourceProvider(params, oCfg.ClientConfig.Timeout, oCfg.Detectors, oCfg.DetectorConfig, oCfg.Attributes)
+	provider, err := f.getResourceProvider(params, oCfg.Timeout, oCfg.Detectors, oCfg.DetectorConfig, oCfg.Attributes)
 	if err != nil {
 		return nil, err
 	}

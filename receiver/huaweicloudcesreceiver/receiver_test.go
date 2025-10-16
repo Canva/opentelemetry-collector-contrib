@@ -16,9 +16,10 @@ import (
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/receivertest"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 	"go.uber.org/zap/zaptest"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/huaweicloudcesreceiver/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/huaweicloudcesreceiver/internal/mocks"
 )
 
@@ -36,7 +37,7 @@ func TestNewReceiver(t *testing.T) {
 			CollectionInterval: 1 * time.Second,
 		},
 	}
-	mr := newHuaweiCloudCesReceiver(receivertest.NewNopSettings(), cfg, new(consumertest.MetricsSink))
+	mr := newHuaweiCloudCesReceiver(receivertest.NewNopSettings(metadata.Type), cfg, new(consumertest.MetricsSink))
 	assert.NotNil(t, mr)
 }
 
@@ -65,7 +66,7 @@ func TestListMetricDefinitionsSuccess(t *testing.T) {
 		config: createDefaultConfig().(*Config),
 	}
 
-	metrics, err := receiver.listMetricDefinitions(context.Background())
+	metrics, err := receiver.listMetricDefinitions(t.Context())
 
 	assert.NoError(t, err)
 	assert.NotNil(t, metrics)
@@ -85,7 +86,7 @@ func TestListMetricDefinitionsFailure(t *testing.T) {
 		config: createDefaultConfig().(*Config),
 	}
 
-	metrics, err := receiver.listMetricDefinitions(context.Background())
+	metrics, err := receiver.listMetricDefinitions(t.Context())
 
 	assert.Error(t, err)
 	assert.Empty(t, metrics)
@@ -96,7 +97,7 @@ func TestListMetricDefinitionsFailure(t *testing.T) {
 func TestListDataPointsForMetricBackOffWIthDefaultConfig(t *testing.T) {
 	mockCes := mocks.NewCesClient(t)
 	next := new(consumertest.MetricsSink)
-	receiver := newHuaweiCloudCesReceiver(receivertest.NewNopSettings(), createDefaultConfig().(*Config), next)
+	receiver := newHuaweiCloudCesReceiver(receivertest.NewNopSettings(metadata.Type), createDefaultConfig().(*Config), next)
 	receiver.client = mockCes
 
 	mockCes.On("ShowMetricData", mock.Anything).Return(nil, errors.New(requestThrottledErrMsg)).Times(3)
@@ -114,7 +115,7 @@ func TestListDataPointsForMetricBackOffWIthDefaultConfig(t *testing.T) {
 		},
 	}, nil)
 
-	resp, err := receiver.listDataPointsForMetric(context.Background(), time.Now().Add(10*time.Minute), time.Now(), model.MetricInfoList{
+	resp, err := receiver.listDataPointsForMetric(t.Context(), time.Now().Add(10*time.Minute), time.Now(), model.MetricInfoList{
 		Namespace:  "SYS.ECS",
 		MetricName: "cpu_util",
 		Dimensions: []model.MetricsDimension{
@@ -132,7 +133,7 @@ func TestListDataPointsForMetricBackOffWIthDefaultConfig(t *testing.T) {
 func TestListDataPointsForMetricBackOffFails(t *testing.T) {
 	mockCes := mocks.NewCesClient(t)
 	next := new(consumertest.MetricsSink)
-	receiver := newHuaweiCloudCesReceiver(receivertest.NewNopSettings(), &Config{BackOffConfig: configretry.BackOffConfig{
+	receiver := newHuaweiCloudCesReceiver(receivertest.NewNopSettings(metadata.Type), &Config{BackOffConfig: configretry.BackOffConfig{
 		Enabled:             true,
 		InitialInterval:     100 * time.Millisecond,
 		MaxInterval:         800 * time.Millisecond,
@@ -144,7 +145,7 @@ func TestListDataPointsForMetricBackOffFails(t *testing.T) {
 
 	mockCes.On("ShowMetricData", mock.Anything).Return(nil, errors.New(requestThrottledErrMsg)).Times(4)
 
-	resp, err := receiver.listDataPointsForMetric(context.Background(), time.Now().Add(10*time.Minute), time.Now(), model.MetricInfoList{
+	resp, err := receiver.listDataPointsForMetric(t.Context(), time.Now().Add(10*time.Minute), time.Now(), model.MetricInfoList{
 		Namespace:  "SYS.ECS",
 		MetricName: "cpu_util",
 		Dimensions: []model.MetricsDimension{
@@ -162,7 +163,7 @@ func TestListDataPointsForMetricBackOffFails(t *testing.T) {
 func TestPollMetricsAndConsumeSuccess(t *testing.T) {
 	mockCes := mocks.NewCesClient(t)
 	next := new(consumertest.MetricsSink)
-	receiver := newHuaweiCloudCesReceiver(receivertest.NewNopSettings(), &Config{}, next)
+	receiver := newHuaweiCloudCesReceiver(receivertest.NewNopSettings(metadata.Type), &Config{}, next)
 	receiver.client = mockCes
 
 	mockCes.On("ListMetrics", mock.Anything).Return(&model.ListMetricsResponse{
@@ -194,7 +195,7 @@ func TestPollMetricsAndConsumeSuccess(t *testing.T) {
 		},
 	}, nil)
 
-	err := receiver.pollMetricsAndConsume(context.Background())
+	err := receiver.pollMetricsAndConsume(t.Context())
 
 	require.NoError(t, err)
 	assert.Equal(t, 2, next.DataPointCount())
@@ -266,7 +267,7 @@ func TestStartReadingMetrics(t *testing.T) {
 				nextConsumer: next,
 				lastSeenTs:   make(map[string]time.Time),
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			ctx, cancel := context.WithTimeout(t.Context(), time.Second)
 			defer cancel()
 			r.startReadingMetrics(ctx)
 

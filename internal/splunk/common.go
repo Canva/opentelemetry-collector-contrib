@@ -4,10 +4,11 @@
 package splunk // import "github.com/open-telemetry/opentelemetry-collector-contrib/internal/splunk"
 
 import (
-	"encoding/json"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/goccy/go-json"
 )
 
 // Constants for Splunk components.
@@ -35,7 +36,7 @@ const (
 
 	// https://docs.splunk.com/Documentation/Splunk/9.2.1/Metrics/Overview#What_is_a_metric_data_point.3F
 	// metric name can contain letters, numbers, underscore, dot or colon. cannot start with number or underscore, or contain metric_name
-	metricNamePattern = "^metric_name:([A-Za-z\\.:][A-Za-z0-9_\\.:]*)$"
+	metricNamePattern = `^metric_name:([A-Za-z.:][A-Za-z0-9_.:\\-]*)$`
 )
 
 var metricNameRegexp = regexp.MustCompile(metricNamePattern)
@@ -48,18 +49,37 @@ type AccessTokenPassthroughConfig struct {
 
 // Event represents a metric in Splunk HEC format
 type Event struct {
-	Time       float64        `json:"time,omitempty"`       // optional epoch time - set to zero if the event timestamp is missing or unknown (will be added at indexing time)
-	Host       string         `json:"host"`                 // hostname
-	Source     string         `json:"source,omitempty"`     // optional description of the source of the event; typically the app's name
-	SourceType string         `json:"sourcetype,omitempty"` // optional name of a Splunk parsing configuration; this is usually inferred by Splunk
-	Index      string         `json:"index,omitempty"`      // optional name of the Splunk index to store the event in; not required if the token has a default index set in Splunk
-	Event      any            `json:"event"`                // type of event: set to "metric" or nil if the event represents a metric, or is the payload of the event.
-	Fields     map[string]any `json:"fields,omitempty"`     // dimensions and metric data
+	// type of event: set to "metric" or nil if the event represents a metric, or is the payload of the event.
+	Event any `json:"event"`
+	// dimensions and metric data
+	Fields map[string]any `json:"fields,omitempty"`
+	// hostname
+	Host string `json:"host"`
+	// optional description of the source of the event; typically the app's name
+	Source string `json:"source,omitempty"`
+	// optional name of a Splunk parsing configuration; this is usually inferred by Splunk
+	SourceType string `json:"sourcetype,omitempty"`
+	// optional name of the Splunk index to store the event in; not required if the token has a default index set in Splunk
+	Index string `json:"index,omitempty"`
+	// optional epoch time - set to zero if the event timestamp is missing or unknown (will be added at indexing time)
+	Time float64 `json:"time,omitempty"`
 }
 
 // IsMetric returns true if the Splunk event is a metric.
 func (e *Event) IsMetric() bool {
-	return e.Event == HecEventMetricType || (e.Event == nil && len(e.GetMetricValues()) > 0)
+	return e.Event == HecEventMetricType || len(e.GetMetricValues()) > 0
+}
+
+// checks if the field name matches the requirements for a metric datapoint field,
+// and returns the metric name and a bool indicating whether the field is a metric.
+func getMetricNameFromField(fieldName string) (string, bool) {
+	// only consider metric name if it fits regex criteria.
+	// use matches[1] since first element contains entire string.
+	// first subgroup will be the actual metric name.
+	if matches := metricNameRegexp.FindStringSubmatch(fieldName); len(matches) > 1 {
+		return matches[1], !strings.Contains(matches[1], "metric_name")
+	}
+	return "", false
 }
 
 // checks if the field name matches the requirements for a metric datapoint field,
@@ -93,12 +113,12 @@ func (e *Event) GetMetricValues() map[string]any {
 func (e *Event) UnmarshalJSON(b []byte) error {
 	rawEvent := struct {
 		Time       any            `json:"time,omitempty"`
+		Event      any            `json:"event"`
+		Fields     map[string]any `json:"fields,omitempty"`
 		Host       string         `json:"host"`
 		Source     string         `json:"source,omitempty"`
 		SourceType string         `json:"sourcetype,omitempty"`
 		Index      string         `json:"index,omitempty"`
-		Event      any            `json:"event"`
-		Fields     map[string]any `json:"fields,omitempty"`
 	}{}
 	err := json.Unmarshal(b, &rawEvent)
 	if err != nil {
@@ -116,13 +136,11 @@ func (e *Event) UnmarshalJSON(b []byte) error {
 	case float64:
 		e.Time = t
 	case string:
-		{
-			time, err := strconv.ParseFloat(t, 64)
-			if err != nil {
-				return err
-			}
-			e.Time = time
+		time, err := strconv.ParseFloat(t, 64)
+		if err != nil {
+			return err
 		}
+		e.Time = time
 	}
 	return nil
 }

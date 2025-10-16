@@ -4,7 +4,6 @@
 package filelogreceiver
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"go.opentelemetry.io/collector/receiver/receivertest"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/storage/storagetest"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver/internal/metadata"
 )
 
 func TestStorage(t *testing.T) {
@@ -24,7 +24,7 @@ func TestStorage(t *testing.T) {
 
 	const baseLog = "This is a simple log line with the number %3d"
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	logsDir := t.TempDir()
 	storageDir := t.TempDir()
@@ -41,7 +41,7 @@ func TestStorage(t *testing.T) {
 	ext := storagetest.NewFileBackedStorageExtension("test", storageDir)
 	host := storagetest.NewStorageHost().WithExtension(ext.ID, ext)
 	sink := new(consumertest.LogsSink)
-	set := receivertest.NewNopSettings()
+	set := receivertest.NewNopSettings(metadata.Type)
 	rcvr, err := f.CreateLogs(ctx, set, cfg, sink)
 	require.NoError(t, err, "failed to create receiver")
 	require.NoError(t, rcvr.Start(ctx, host))
@@ -160,7 +160,7 @@ func newRecallLogger(t *testing.T, tempDir string) *recallLogger {
 
 func (l *recallLogger) log(s string) {
 	l.written = append(l.written, s)
-	l.Logger.Println(s)
+	l.Println(s)
 }
 
 func (l *recallLogger) recall() []string {

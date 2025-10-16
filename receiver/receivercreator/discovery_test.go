@@ -26,12 +26,14 @@ func TestK8sHintsBuilderMetrics(t *testing.T) {
 collection_interval: "20s"
 timeout: "30s"
 username: "username"
-password: "changeme"`
+password: "changeme"
+endpoint: 1.2.3.4:6379`
 	configRedis := `
 collection_interval: "20s"
 timeout: "130s"
 username: "username"
-password: "changeme"`
+password: "changeme"
+endpoint: 1.2.3.4:6379`
 
 	tests := map[string]struct {
 		inputEndpoint    observer.Endpoint
@@ -109,7 +111,7 @@ password: "changeme"`
 			expectedReceiver: receiverTemplate{
 				receiverConfig: receiverConfig{
 					id:     id,
-					config: userConfigMap{"endpoint": "1.2.3.4:6379"},
+					config: userConfigMap{},
 				}, signals: receiverSignals{metrics: true, logs: false, traces: false},
 			},
 			wantError:       false,
@@ -205,7 +207,377 @@ password: "changeme"`
 			}
 			if !test.wantError {
 				require.NoError(t, err)
-				require.Equal(t, subreceiverTemplate.receiverConfig.config, test.expectedReceiver.receiverConfig.config)
+				require.Equal(t, subreceiverTemplate.config, test.expectedReceiver.config)
+				require.Equal(t, subreceiverTemplate.signals, test.expectedReceiver.signals)
+				require.Equal(t, subreceiverTemplate.id, test.expectedReceiver.id)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestK8sHintsBuilderLogs(t *testing.T) {
+	logger := zaptest.NewLogger(t, zaptest.Level(zap.InfoLevel))
+
+	id := component.ID{}
+	err := id.UnmarshalText([]byte("filelog/pod-2-UID_redis"))
+	assert.NoError(t, err)
+
+	idNginx := component.ID{}
+	err = idNginx.UnmarshalText([]byte("filelog/pod-2-UID_nginx"))
+	assert.NoError(t, err)
+
+	config := `
+include_file_name: true
+max_log_size: "2MiB"
+operators:
+- type: container
+  id: container-parser
+- type: regex_parser
+  regex: "^(?P<time>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$"`
+	configNginx := `
+include_file_name: true
+max_log_size: "4MiB"
+operators:
+- type: container
+  id: container-parser
+- type: add
+  field: attributes.tag
+  value: beta`
+	configReplaceContainer := `
+operators:
+- type: container
+  id: replaced
+- type: regex_parser
+  regex: "^(?P<time>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$"`
+	configReplaceInclude := `
+include:
+- /var/log/pod/x/foo.log`
+
+	tests := map[string]struct {
+		inputEndpoint      observer.Endpoint
+		expectedReceiver   receiverTemplate
+		wantError          bool
+		ignoreReceivers    []string
+		defaultAnnotations map[string]string
+	}{
+		`logs_pod_level_hints_only`: {
+			inputEndpoint: observer.Endpoint{
+				ID:     "namespace/pod-2-UID/filelog(redis)",
+				Target: "1.2.3.4:",
+				Details: &observer.PodContainer{
+					Name: "redis", Pod: observer.Pod{
+						Name:      "pod-2",
+						Namespace: "default",
+						UID:       "pod-2-UID",
+						Labels:    map[string]string{"env": "prod"},
+						Annotations: map[string]string{
+							otelLogsHints + "/enabled": "true",
+							otelLogsHints + "/config":  config,
+						},
+					},
+				},
+			},
+			expectedReceiver: receiverTemplate{
+				receiverConfig: receiverConfig{
+					id: id,
+					config: userConfigMap{
+						"include":           []string{"/var/log/pods/default_pod-2_pod-2-UID/redis/*.log"},
+						"include_file_name": true,
+						"include_file_path": true,
+						"max_log_size":      "2MiB",
+						"operators": []any{
+							map[string]any{"id": "container-parser", "type": "container"},
+							map[string]any{"type": "regex_parser", "regex": "^(?P<time>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$"},
+						},
+					},
+				}, signals: receiverSignals{metrics: false, logs: true, traces: false},
+			},
+			wantError:       false,
+			ignoreReceivers: []string{},
+		}, `logs_pod_level_hints_only_ignore_receiver`: {
+			inputEndpoint: observer.Endpoint{
+				ID:     "namespace/pod-2-UID/filelog(redis)",
+				Target: "1.2.3.4:",
+				Details: &observer.PodContainer{
+					Name: "redis", Pod: observer.Pod{
+						Name:      "pod-2",
+						Namespace: "default",
+						UID:       "pod-2-UID",
+						Labels:    map[string]string{"env": "prod"},
+						Annotations: map[string]string{
+							otelLogsHints + "/enabled": "true",
+							otelLogsHints + "/config":  config,
+						},
+					},
+				},
+			},
+			expectedReceiver: receiverTemplate{},
+			wantError:        false,
+			ignoreReceivers:  []string{logsReceiver},
+		}, `logs_pod_level_hints_only_defaults`: {
+			inputEndpoint: observer.Endpoint{
+				ID:     "namespace/pod-2-UID/filelog(redis)",
+				Target: "1.2.3.4:6379",
+				Details: &observer.PodContainer{
+					Name: "redis", Pod: observer.Pod{
+						Name:      "pod-2",
+						Namespace: "default",
+						UID:       "pod-2-UID",
+						Labels:    map[string]string{"env": "prod"},
+						Annotations: map[string]string{
+							otelLogsHints + "/enabled": "true",
+						},
+					},
+				},
+			},
+			expectedReceiver: receiverTemplate{
+				receiverConfig: receiverConfig{
+					id: id,
+					config: userConfigMap{
+						"include":           []string{"/var/log/pods/default_pod-2_pod-2-UID/redis/*.log"},
+						"include_file_name": false,
+						"include_file_path": true,
+						"operators": []any{
+							map[string]any{"id": "container-parser", "type": "container"},
+						},
+					},
+				}, signals: receiverSignals{metrics: false, logs: true, traces: false},
+			},
+			wantError:       false,
+			ignoreReceivers: []string{},
+		}, `logs_pod_level_hints_default_all`: {
+			inputEndpoint: observer.Endpoint{
+				ID:     "namespace/pod-2-UID/filelog(redis)",
+				Target: "1.2.3.4:6379",
+				Details: &observer.PodContainer{
+					Name: "redis", Pod: observer.Pod{
+						Name:        "pod-2",
+						Namespace:   "default",
+						UID:         "pod-2-UID",
+						Labels:      map[string]string{"env": "prod"},
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			expectedReceiver: receiverTemplate{
+				receiverConfig: receiverConfig{
+					id: id,
+					config: userConfigMap{
+						"include":           []string{"/var/log/pods/default_pod-2_pod-2-UID/redis/*.log"},
+						"include_file_name": false,
+						"include_file_path": true,
+						"operators": []any{
+							map[string]any{"id": "container-parser", "type": "container"},
+						},
+					},
+				}, signals: receiverSignals{metrics: false, logs: true, traces: false},
+			},
+			wantError:       false,
+			ignoreReceivers: []string{},
+			defaultAnnotations: map[string]string{
+				otelLogsHints + "/enabled": "true",
+			},
+		}, `logs_pod_level_hints_disable_default_all`: {
+			inputEndpoint: observer.Endpoint{
+				ID:     "namespace/pod-2-UID/filelog(redis)",
+				Target: "1.2.3.4:6379",
+				Details: &observer.PodContainer{
+					Name: "redis", Pod: observer.Pod{
+						Name:      "pod-2",
+						Namespace: "default",
+						UID:       "pod-2-UID",
+						Labels:    map[string]string{"env": "prod"},
+						Annotations: map[string]string{
+							otelLogsHints + "/enabled": "false",
+						},
+					},
+				},
+			},
+			expectedReceiver: receiverTemplate{},
+			wantError:        false,
+			ignoreReceivers:  []string{},
+			defaultAnnotations: map[string]string{
+				otelLogsHints + "/enabled": "true",
+			},
+		}, `logs_container_level_hints`: {
+			inputEndpoint: observer.Endpoint{
+				ID:     "namespace/pod-2-UID/filelog(redis)",
+				Target: "1.2.3.4:6379",
+				Details: &observer.PodContainer{
+					Name: "redis", Pod: observer.Pod{
+						Name:      "pod-2",
+						Namespace: "default",
+						UID:       "pod-2-UID",
+						Labels:    map[string]string{"env": "prod"},
+						Annotations: map[string]string{
+							otelLogsHints + ".redis/enabled": "true",
+							otelLogsHints + ".redis/config":  config,
+						},
+					},
+				},
+			},
+			expectedReceiver: receiverTemplate{
+				receiverConfig: receiverConfig{
+					id: id,
+					config: userConfigMap{
+						"include":           []string{"/var/log/pods/default_pod-2_pod-2-UID/redis/*.log"},
+						"include_file_name": true,
+						"include_file_path": true,
+						"max_log_size":      "2MiB",
+						"operators": []any{
+							map[string]any{"id": "container-parser", "type": "container"},
+							map[string]any{"type": "regex_parser", "regex": "^(?P<time>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$"},
+						},
+					},
+				}, signals: receiverSignals{metrics: false, logs: true, traces: false},
+			},
+			wantError:       false,
+			ignoreReceivers: []string{},
+		}, `logs_mix_level_hints`: {
+			inputEndpoint: observer.Endpoint{
+				ID:     "namespace/pod-2-UID/filelog(redis)",
+				Target: "1.2.3.4:6379",
+				Details: &observer.PodContainer{
+					Name: "nginx", Pod: observer.Pod{
+						Name:      "pod-2",
+						Namespace: "default",
+						UID:       "pod-2-UID",
+						Labels:    map[string]string{"env": "prod"},
+						Annotations: map[string]string{
+							otelLogsHints + ".nginx/enabled": "true",
+							otelLogsHints + "/config":        config,
+							otelLogsHints + ".nginx/config":  configNginx,
+						},
+					},
+				},
+			},
+			expectedReceiver: receiverTemplate{
+				receiverConfig: receiverConfig{
+					id: idNginx,
+					config: userConfigMap{
+						"include":           []string{"/var/log/pods/default_pod-2_pod-2-UID/nginx/*.log"},
+						"include_file_name": true,
+						"include_file_path": true,
+						"max_log_size":      "4MiB",
+						"operators": []any{
+							map[string]any{"id": "container-parser", "type": "container"},
+							map[string]any{"type": "add", "field": "attributes.tag", "value": "beta"},
+						},
+					},
+				}, signals: receiverSignals{metrics: false, logs: true, traces: false},
+			},
+			wantError:       false,
+			ignoreReceivers: []string{},
+		}, `logs_no_container_error`: {
+			inputEndpoint: observer.Endpoint{
+				ID:     "namespace/pod-2-UID/filelog(redis)",
+				Target: "1.2.3.4",
+				Details: &observer.PodContainer{
+					Name: "", Pod: observer.Pod{
+						Name:      "pod-2",
+						Namespace: "default",
+						UID:       "pod-2-UID",
+						Labels:    map[string]string{"env": "prod"},
+						Annotations: map[string]string{
+							otelLogsHints + ".nginx/enabled": "true",
+							otelLogsHints + "/config":        config,
+							otelLogsHints + ".nginx/config":  configNginx,
+						},
+					},
+				},
+			},
+			expectedReceiver: receiverTemplate{},
+			wantError:        true,
+			ignoreReceivers:  []string{},
+		}, `logs_pod_level_hints_replace_container_operator`: {
+			inputEndpoint: observer.Endpoint{
+				ID:     "namespace/pod-2-UID/filelog(redis)",
+				Target: "1.2.3.4:",
+				Details: &observer.PodContainer{
+					Name: "redis", Pod: observer.Pod{
+						Name:      "pod-2",
+						Namespace: "default",
+						UID:       "pod-2-UID",
+						Labels:    map[string]string{"env": "prod"},
+						Annotations: map[string]string{
+							otelLogsHints + "/enabled": "true",
+							otelLogsHints + "/config":  configReplaceContainer,
+						},
+					},
+				},
+			},
+			expectedReceiver: receiverTemplate{
+				receiverConfig: receiverConfig{
+					id: id,
+					config: userConfigMap{
+						"include":           []string{"/var/log/pods/default_pod-2_pod-2-UID/redis/*.log"},
+						"include_file_name": false,
+						"include_file_path": true,
+						"operators": []any{
+							map[string]any{"id": "replaced", "type": "container"},
+							map[string]any{"type": "regex_parser", "regex": "^(?P<time>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$"},
+						},
+					},
+				}, signals: receiverSignals{metrics: false, logs: true, traces: false},
+			},
+			wantError:       false,
+			ignoreReceivers: []string{},
+		}, `logs_pod_level_hints_do_not_replace_path`: {
+			inputEndpoint: observer.Endpoint{
+				ID:     "namespace/pod-2-UID/filelog(redis)",
+				Target: "1.2.3.4:",
+				Details: &observer.PodContainer{
+					Name: "redis", Pod: observer.Pod{
+						Name:      "pod-2",
+						Namespace: "default",
+						UID:       "pod-2-UID",
+						Labels:    map[string]string{"env": "prod"},
+						Annotations: map[string]string{
+							otelLogsHints + "/enabled": "true",
+							otelLogsHints + "/config":  configReplaceInclude,
+						},
+					},
+				},
+			},
+			expectedReceiver: receiverTemplate{
+				receiverConfig: receiverConfig{
+					id: id,
+					config: userConfigMap{
+						"include":           []string{"/var/log/pods/default_pod-2_pod-2-UID/redis/*.log"},
+						"include_file_name": false,
+						"include_file_path": true,
+						"operators": []any{
+							map[string]any{"id": "container-parser", "type": "container"},
+						},
+					},
+				}, signals: receiverSignals{metrics: false, logs: true, traces: false},
+			},
+			wantError:       false,
+			ignoreReceivers: []string{},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			builder := createK8sHintsBuilder(
+				DiscoveryConfig{
+					Enabled:            true,
+					IgnoreReceivers:    test.ignoreReceivers,
+					DefaultAnnotations: test.defaultAnnotations,
+				},
+				logger)
+			env, err := test.inputEndpoint.Env()
+			require.NoError(t, err)
+			subreceiverTemplate, err := builder.createReceiverTemplateFromHints(env)
+			if subreceiverTemplate == nil {
+				require.Equal(t, receiverTemplate{}, test.expectedReceiver)
+				return
+			}
+			if !test.wantError {
+				require.NoError(t, err)
+				require.Equal(t, subreceiverTemplate.config, test.expectedReceiver.config)
 				require.Equal(t, subreceiverTemplate.signals, test.expectedReceiver.signals)
 				require.Equal(t, subreceiverTemplate.id, test.expectedReceiver.id)
 			} else {
@@ -254,7 +626,6 @@ nested_example:
 				"io.opentelemetry.discovery.metrics/config":  configNoEndpoint,
 			}, expectedConf: userConfigMap{
 				"collection_interval": "20s",
-				"endpoint":            "1.1.1.1:8080",
 				"initial_delay":       "20s",
 				"read_buffer_size":    "10",
 				"nested_example":      userConfigMap{"foo": "bar"},
@@ -299,7 +670,75 @@ nested_example:
 	}
 }
 
-func TestDiscoveryMetricsEnabled(t *testing.T) {
+func TestCreateLogsConfig(t *testing.T) {
+	config := `
+include_file_name: true
+max_log_size: "2MiB"
+operators:
+- type: container
+  id: container-parser
+- type: regex_parser
+  regex: "^(?P<time>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$"`
+	configRegex := `
+include_file_name: true
+max_log_size: "2MiB"
+operators:
+- type: container
+  id: container-parser
+- type: regex_parser
+  regex: ^(?P<source_ip>\d+\.\d+.\d+\.\d+)\s+-\s+-\s+\[(?P<timestamp_log>\d+/\w+/\d+:\d+:\d+:\d+\s+\+\d+)\]\s"(?P<http_method>\w+)\s+(?P<http_path>.*)\s+(?P<http_version>.*)"\s+(?P<http_code>\d+)\s+(?P<http_size>\d+)$`
+	tests := map[string]struct {
+		hintsAnn        map[string]string
+		expectedConf    userConfigMap
+		defaultEndpoint string
+	}{
+		"simple_annotation_case": {
+			hintsAnn: map[string]string{
+				"io.opentelemetry.discovery.logs/config": config,
+			}, expectedConf: userConfigMap{
+				"include":           []string{"/var/log/pods/my-ns_my-pod_my-uid/my-container/*.log"},
+				"include_file_name": true,
+				"include_file_path": true,
+				"max_log_size":      "2MiB",
+				"operators": []any{
+					map[string]any{"id": "container-parser", "type": "container"},
+					map[string]any{"type": "regex_parser", "regex": "^(?P<time>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$"},
+				},
+			}, defaultEndpoint: "1.2.3.4:8080",
+		}, "config_annotation_case": {
+			hintsAnn: map[string]string{
+				"io.opentelemetry.discovery.logs/config": configRegex,
+			}, expectedConf: userConfigMap{
+				"include":           []string{"/var/log/pods/my-ns_my-pod_my-uid/my-container/*.log"},
+				"include_file_name": true,
+				"include_file_path": true,
+				"max_log_size":      "2MiB",
+				"operators": []any{
+					map[string]any{"id": "container-parser", "type": "container"},
+					map[string]any{"type": "regex_parser", "regex": `^(?P<source_ip>\d+\.\d+.\d+\.\d+)\s+-\s+-\s+\[(?P<timestamp_log>\d+/\w+/\d+:\d+:\d+:\d+\s+\+\d+)\]\s"(?P<http_method>\w+)\s+(?P<http_path>.*)\s+(?P<http_version>.*)"\s+(?P<http_code>\d+)\s+(?P<http_size>\d+)$`},
+				},
+			}, defaultEndpoint: "1.2.3.4:8080",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(
+				t,
+				test.expectedConf,
+				createLogsConfig(
+					test.hintsAnn,
+					"my-container",
+					"my-uid",
+					"my-pod",
+					"my-ns",
+					zaptest.NewLogger(t, zaptest.Level(zap.InfoLevel))),
+			)
+		})
+	}
+}
+
+func TestDiscoveryEnabled(t *testing.T) {
 	config := `
 endpoint: "0.0.0.0:8080"`
 	tests := map[string]struct {
@@ -342,7 +781,7 @@ endpoint: "0.0.0.0:8080"`
 			assert.Equal(
 				t,
 				test.expected,
-				discoveryMetricsEnabled(test.hintsAnn, otelMetricsHints, test.scopeSuffix),
+				discoveryEnabled(test.hintsAnn, otelMetricsHints, test.scopeSuffix),
 			)
 		})
 	}

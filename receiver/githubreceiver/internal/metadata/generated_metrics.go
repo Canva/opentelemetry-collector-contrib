@@ -10,10 +10,10 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
-	conventions "go.opentelemetry.io/collector/semconv/v1.27.0"
+	conventions "go.opentelemetry.io/otel/semconv/v1.37.0"
 )
 
-// AttributeVcsChangeState specifies the a value vcs.change.state attribute.
+// AttributeVcsChangeState specifies the value vcs.change.state attribute.
 type AttributeVcsChangeState int
 
 const (
@@ -39,7 +39,7 @@ var MapAttributeVcsChangeState = map[string]AttributeVcsChangeState{
 	"merged": AttributeVcsChangeStateMerged,
 }
 
-// AttributeVcsLineChangeType specifies the a value vcs.line_change.type attribute.
+// AttributeVcsLineChangeType specifies the value vcs.line_change.type attribute.
 type AttributeVcsLineChangeType int
 
 const (
@@ -65,7 +65,33 @@ var MapAttributeVcsLineChangeType = map[string]AttributeVcsLineChangeType{
 	"removed": AttributeVcsLineChangeTypeRemoved,
 }
 
-// AttributeVcsRefHeadType specifies the a value vcs.ref.head.type attribute.
+// AttributeVcsRefBaseType specifies the value vcs.ref.base.type attribute.
+type AttributeVcsRefBaseType int
+
+const (
+	_ AttributeVcsRefBaseType = iota
+	AttributeVcsRefBaseTypeBranch
+	AttributeVcsRefBaseTypeTag
+)
+
+// String returns the string representation of the AttributeVcsRefBaseType.
+func (av AttributeVcsRefBaseType) String() string {
+	switch av {
+	case AttributeVcsRefBaseTypeBranch:
+		return "branch"
+	case AttributeVcsRefBaseTypeTag:
+		return "tag"
+	}
+	return ""
+}
+
+// MapAttributeVcsRefBaseType is a helper map of string to AttributeVcsRefBaseType attribute value.
+var MapAttributeVcsRefBaseType = map[string]AttributeVcsRefBaseType{
+	"branch": AttributeVcsRefBaseTypeBranch,
+	"tag":    AttributeVcsRefBaseTypeTag,
+}
+
+// AttributeVcsRefHeadType specifies the value vcs.ref.head.type attribute.
 type AttributeVcsRefHeadType int
 
 const (
@@ -91,7 +117,33 @@ var MapAttributeVcsRefHeadType = map[string]AttributeVcsRefHeadType{
 	"tag":    AttributeVcsRefHeadTypeTag,
 }
 
-// AttributeVcsRevisionDeltaDirection specifies the a value vcs.revision_delta.direction attribute.
+// AttributeVcsRefType specifies the value vcs.ref.type attribute.
+type AttributeVcsRefType int
+
+const (
+	_ AttributeVcsRefType = iota
+	AttributeVcsRefTypeBranch
+	AttributeVcsRefTypeTag
+)
+
+// String returns the string representation of the AttributeVcsRefType.
+func (av AttributeVcsRefType) String() string {
+	switch av {
+	case AttributeVcsRefTypeBranch:
+		return "branch"
+	case AttributeVcsRefTypeTag:
+		return "tag"
+	}
+	return ""
+}
+
+// MapAttributeVcsRefType is a helper map of string to AttributeVcsRefType attribute value.
+var MapAttributeVcsRefType = map[string]AttributeVcsRefType{
+	"branch": AttributeVcsRefTypeBranch,
+	"tag":    AttributeVcsRefTypeTag,
+}
+
+// AttributeVcsRevisionDeltaDirection specifies the value vcs.revision_delta.direction attribute.
 type AttributeVcsRevisionDeltaDirection int
 
 const (
@@ -115,6 +167,56 @@ func (av AttributeVcsRevisionDeltaDirection) String() string {
 var MapAttributeVcsRevisionDeltaDirection = map[string]AttributeVcsRevisionDeltaDirection{
 	"ahead":  AttributeVcsRevisionDeltaDirectionAhead,
 	"behind": AttributeVcsRevisionDeltaDirectionBehind,
+}
+
+var MetricsInfo = metricsInfo{
+	VcsChangeCount: metricInfo{
+		Name: "vcs.change.count",
+	},
+	VcsChangeDuration: metricInfo{
+		Name: "vcs.change.duration",
+	},
+	VcsChangeTimeToApproval: metricInfo{
+		Name: "vcs.change.time_to_approval",
+	},
+	VcsChangeTimeToMerge: metricInfo{
+		Name: "vcs.change.time_to_merge",
+	},
+	VcsContributorCount: metricInfo{
+		Name: "vcs.contributor.count",
+	},
+	VcsRefCount: metricInfo{
+		Name: "vcs.ref.count",
+	},
+	VcsRefLinesDelta: metricInfo{
+		Name: "vcs.ref.lines_delta",
+	},
+	VcsRefRevisionsDelta: metricInfo{
+		Name: "vcs.ref.revisions_delta",
+	},
+	VcsRefTime: metricInfo{
+		Name: "vcs.ref.time",
+	},
+	VcsRepositoryCount: metricInfo{
+		Name: "vcs.repository.count",
+	},
+}
+
+type metricsInfo struct {
+	VcsChangeCount          metricInfo
+	VcsChangeDuration       metricInfo
+	VcsChangeTimeToApproval metricInfo
+	VcsChangeTimeToMerge    metricInfo
+	VcsContributorCount     metricInfo
+	VcsRefCount             metricInfo
+	VcsRefLinesDelta        metricInfo
+	VcsRefRevisionsDelta    metricInfo
+	VcsRefTime              metricInfo
+	VcsRepositoryCount      metricInfo
+}
+
+type metricInfo struct {
+	Name string
 }
 
 type metricVcsChangeCount struct {
@@ -397,7 +499,7 @@ func (m *metricVcsRefCount) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricVcsRefCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefHeadTypeAttributeValue string) {
+func (m *metricVcsRefCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -407,7 +509,7 @@ func (m *metricVcsRefCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("vcs.repository.url.full", vcsRepositoryURLFullAttributeValue)
 	dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
-	dp.Attributes().PutStr("vcs.ref.head.type", vcsRefHeadTypeAttributeValue)
+	dp.Attributes().PutStr("vcs.ref.type", vcsRefTypeAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -450,7 +552,7 @@ func (m *metricVcsRefLinesDelta) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricVcsRefLinesDelta) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefHeadNameAttributeValue string, vcsRefHeadTypeAttributeValue string, vcsLineChangeTypeAttributeValue string) {
+func (m *metricVcsRefLinesDelta) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefHeadNameAttributeValue string, vcsRefHeadTypeAttributeValue string, vcsRefBaseNameAttributeValue string, vcsRefBaseTypeAttributeValue string, vcsLineChangeTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -462,6 +564,8 @@ func (m *metricVcsRefLinesDelta) recordDataPoint(start pcommon.Timestamp, ts pco
 	dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
 	dp.Attributes().PutStr("vcs.ref.head.name", vcsRefHeadNameAttributeValue)
 	dp.Attributes().PutStr("vcs.ref.head.type", vcsRefHeadTypeAttributeValue)
+	dp.Attributes().PutStr("vcs.ref.base.name", vcsRefBaseNameAttributeValue)
+	dp.Attributes().PutStr("vcs.ref.base.type", vcsRefBaseTypeAttributeValue)
 	dp.Attributes().PutStr("vcs.line_change.type", vcsLineChangeTypeAttributeValue)
 }
 
@@ -505,7 +609,7 @@ func (m *metricVcsRefRevisionsDelta) init() {
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricVcsRefRevisionsDelta) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefHeadNameAttributeValue string, vcsRefHeadTypeAttributeValue string, vcsRevisionDeltaDirectionAttributeValue string) {
+func (m *metricVcsRefRevisionsDelta) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefHeadNameAttributeValue string, vcsRefHeadTypeAttributeValue string, vcsRefBaseNameAttributeValue string, vcsRefBaseTypeAttributeValue string, vcsRevisionDeltaDirectionAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -517,6 +621,8 @@ func (m *metricVcsRefRevisionsDelta) recordDataPoint(start pcommon.Timestamp, ts
 	dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
 	dp.Attributes().PutStr("vcs.ref.head.name", vcsRefHeadNameAttributeValue)
 	dp.Attributes().PutStr("vcs.ref.head.type", vcsRefHeadTypeAttributeValue)
+	dp.Attributes().PutStr("vcs.ref.base.name", vcsRefBaseNameAttributeValue)
+	dp.Attributes().PutStr("vcs.ref.base.type", vcsRefBaseTypeAttributeValue)
 	dp.Attributes().PutStr("vcs.revision_delta.direction", vcsRevisionDeltaDirectionAttributeValue)
 }
 
@@ -554,7 +660,7 @@ type metricVcsRefTime struct {
 // init fills vcs.ref.time metric with initial data.
 func (m *metricVcsRefTime) init() {
 	m.data.SetName("vcs.ref.time")
-	m.data.SetDescription("Time a ref (branch) created from the default branch (trunk) has existed. The `vcs.ref.head.type` attribute will always be `branch`.")
+	m.data.SetDescription("Time a ref (branch) created from the default branch (trunk) has existed. The `vcs.ref.type` attribute will always be `branch`.")
 	m.data.SetUnit("s")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
@@ -687,7 +793,6 @@ func WithStartTime(startTime pcommon.Timestamp) MetricBuilderOption {
 		mb.startTime = startTime
 	})
 }
-
 func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...MetricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
 		config:                         mbc,
@@ -707,17 +812,17 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		resourceAttributeIncludeFilter: make(map[string]filter.Filter),
 		resourceAttributeExcludeFilter: make(map[string]filter.Filter),
 	}
-	if mbc.ResourceAttributes.OrganizationName.MetricsInclude != nil {
-		mb.resourceAttributeIncludeFilter["organization.name"] = filter.CreateFilter(mbc.ResourceAttributes.OrganizationName.MetricsInclude)
+	if mbc.ResourceAttributes.VcsOwnerName.MetricsInclude != nil {
+		mb.resourceAttributeIncludeFilter["vcs.owner.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsOwnerName.MetricsInclude)
 	}
-	if mbc.ResourceAttributes.OrganizationName.MetricsExclude != nil {
-		mb.resourceAttributeExcludeFilter["organization.name"] = filter.CreateFilter(mbc.ResourceAttributes.OrganizationName.MetricsExclude)
+	if mbc.ResourceAttributes.VcsOwnerName.MetricsExclude != nil {
+		mb.resourceAttributeExcludeFilter["vcs.owner.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsOwnerName.MetricsExclude)
 	}
-	if mbc.ResourceAttributes.VcsVendorName.MetricsInclude != nil {
-		mb.resourceAttributeIncludeFilter["vcs.vendor.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsVendorName.MetricsInclude)
+	if mbc.ResourceAttributes.VcsProviderName.MetricsInclude != nil {
+		mb.resourceAttributeIncludeFilter["vcs.provider.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsProviderName.MetricsInclude)
 	}
-	if mbc.ResourceAttributes.VcsVendorName.MetricsExclude != nil {
-		mb.resourceAttributeExcludeFilter["vcs.vendor.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsVendorName.MetricsExclude)
+	if mbc.ResourceAttributes.VcsProviderName.MetricsExclude != nil {
+		mb.resourceAttributeExcludeFilter["vcs.provider.name"] = filter.CreateFilter(mbc.ResourceAttributes.VcsProviderName.MetricsExclude)
 	}
 
 	for _, op := range options {
@@ -786,7 +891,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	rm := pmetric.NewResourceMetrics()
 	rm.SetSchemaUrl(conventions.SchemaURL)
 	ils := rm.ScopeMetrics().AppendEmpty()
-	ils.Scope().SetName("github.com/open-telemetry/opentelemetry-collector-contrib/receiver/githubreceiver")
+	ils.Scope().SetName(ScopeName)
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
 	mb.metricVcsChangeCount.emit(ils.Metrics())
@@ -856,18 +961,18 @@ func (mb *MetricsBuilder) RecordVcsContributorCountDataPoint(ts pcommon.Timestam
 }
 
 // RecordVcsRefCountDataPoint adds a data point to vcs.ref.count metric.
-func (mb *MetricsBuilder) RecordVcsRefCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefHeadTypeAttributeValue AttributeVcsRefHeadType) {
-	mb.metricVcsRefCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryURLFullAttributeValue, vcsRepositoryNameAttributeValue, vcsRefHeadTypeAttributeValue.String())
+func (mb *MetricsBuilder) RecordVcsRefCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefTypeAttributeValue AttributeVcsRefType) {
+	mb.metricVcsRefCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryURLFullAttributeValue, vcsRepositoryNameAttributeValue, vcsRefTypeAttributeValue.String())
 }
 
 // RecordVcsRefLinesDeltaDataPoint adds a data point to vcs.ref.lines_delta metric.
-func (mb *MetricsBuilder) RecordVcsRefLinesDeltaDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefHeadNameAttributeValue string, vcsRefHeadTypeAttributeValue AttributeVcsRefHeadType, vcsLineChangeTypeAttributeValue AttributeVcsLineChangeType) {
-	mb.metricVcsRefLinesDelta.recordDataPoint(mb.startTime, ts, val, vcsRepositoryURLFullAttributeValue, vcsRepositoryNameAttributeValue, vcsRefHeadNameAttributeValue, vcsRefHeadTypeAttributeValue.String(), vcsLineChangeTypeAttributeValue.String())
+func (mb *MetricsBuilder) RecordVcsRefLinesDeltaDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefHeadNameAttributeValue string, vcsRefHeadTypeAttributeValue AttributeVcsRefHeadType, vcsRefBaseNameAttributeValue string, vcsRefBaseTypeAttributeValue AttributeVcsRefBaseType, vcsLineChangeTypeAttributeValue AttributeVcsLineChangeType) {
+	mb.metricVcsRefLinesDelta.recordDataPoint(mb.startTime, ts, val, vcsRepositoryURLFullAttributeValue, vcsRepositoryNameAttributeValue, vcsRefHeadNameAttributeValue, vcsRefHeadTypeAttributeValue.String(), vcsRefBaseNameAttributeValue, vcsRefBaseTypeAttributeValue.String(), vcsLineChangeTypeAttributeValue.String())
 }
 
 // RecordVcsRefRevisionsDeltaDataPoint adds a data point to vcs.ref.revisions_delta metric.
-func (mb *MetricsBuilder) RecordVcsRefRevisionsDeltaDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefHeadNameAttributeValue string, vcsRefHeadTypeAttributeValue AttributeVcsRefHeadType, vcsRevisionDeltaDirectionAttributeValue AttributeVcsRevisionDeltaDirection) {
-	mb.metricVcsRefRevisionsDelta.recordDataPoint(mb.startTime, ts, val, vcsRepositoryURLFullAttributeValue, vcsRepositoryNameAttributeValue, vcsRefHeadNameAttributeValue, vcsRefHeadTypeAttributeValue.String(), vcsRevisionDeltaDirectionAttributeValue.String())
+func (mb *MetricsBuilder) RecordVcsRefRevisionsDeltaDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryURLFullAttributeValue string, vcsRepositoryNameAttributeValue string, vcsRefHeadNameAttributeValue string, vcsRefHeadTypeAttributeValue AttributeVcsRefHeadType, vcsRefBaseNameAttributeValue string, vcsRefBaseTypeAttributeValue AttributeVcsRefBaseType, vcsRevisionDeltaDirectionAttributeValue AttributeVcsRevisionDeltaDirection) {
+	mb.metricVcsRefRevisionsDelta.recordDataPoint(mb.startTime, ts, val, vcsRepositoryURLFullAttributeValue, vcsRepositoryNameAttributeValue, vcsRefHeadNameAttributeValue, vcsRefHeadTypeAttributeValue.String(), vcsRefBaseNameAttributeValue, vcsRefBaseTypeAttributeValue.String(), vcsRevisionDeltaDirectionAttributeValue.String())
 }
 
 // RecordVcsRefTimeDataPoint adds a data point to vcs.ref.time metric.

@@ -4,7 +4,6 @@
 package metricstransformprocessor
 
 import (
-	"context"
 	"path/filepath"
 	"regexp"
 	"testing"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor/internal/metadata"
 )
 
 type metricsGroupingTest struct {
@@ -66,8 +66,8 @@ func TestMetricsGrouping(t *testing.T) {
 				}
 
 				mtp, err := processorhelper.NewMetrics(
-					context.Background(),
-					processortest.NewNopSettings(),
+					t.Context(),
+					processortest.NewNopSettings(metadata.Type),
 					&Config{},
 					next, p.processMetrics, processorhelper.WithCapabilities(consumerCapabilities))
 				require.NoError(t, err)
@@ -80,14 +80,14 @@ func TestMetricsGrouping(t *testing.T) {
 				expected, err := golden.ReadMetrics(filepath.Join("testdata", "operation_group", test.name+"_out.yaml"))
 				require.NoError(t, err)
 
-				cErr := mtp.ConsumeMetrics(context.Background(), input)
+				cErr := mtp.ConsumeMetrics(t.Context(), input)
 				assert.NoError(t, cErr)
 
 				got := next.AllMetrics()
 				require.Len(t, got, 1)
 				require.NoError(t, pmetrictest.CompareMetrics(expected, got[0], pmetrictest.IgnoreMetricValues()))
 
-				assert.NoError(t, mtp.Shutdown(context.Background()))
+				assert.NoError(t, mtp.Shutdown(t.Context()))
 			})
 		}
 	}

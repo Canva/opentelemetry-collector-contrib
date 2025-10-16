@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/open-telemetry/otel-arrow/pkg/config"
+	"github.com/open-telemetry/otel-arrow/go/pkg/config"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configcompression"
 	"go.opentelemetry.io/collector/config/configgrpc"
 	"go.opentelemetry.io/collector/config/configretry"
-	"go.opentelemetry.io/collector/exporter/exporterbatcher"
+	"go.opentelemetry.io/collector/confmap/xconfmap"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 	"google.golang.org/grpc"
 
@@ -27,8 +27,8 @@ type Config struct {
 	// inherited from exporterhelper using field names
 	// intentionally identical to the core OTLP exporter.
 
-	TimeoutSettings exporterhelper.TimeoutConfig `mapstructure:",squash"` // squash ensures fields are correctly decoded in embedded struct.
-	QueueSettings   exporterhelper.QueueConfig   `mapstructure:"sending_queue"`
+	TimeoutSettings exporterhelper.TimeoutConfig    `mapstructure:",squash"` // squash ensures fields are correctly decoded in embedded struct.
+	QueueSettings   exporterhelper.QueueBatchConfig `mapstructure:"sending_queue"`
 
 	RetryConfig configretry.BackOffConfig `mapstructure:"retry_on_failure"`
 
@@ -106,7 +106,25 @@ type ArrowConfig struct {
 
 var _ component.Config = (*Config)(nil)
 
-var _ component.ConfigValidator = (*ArrowConfig)(nil)
+var _ xconfmap.Validator = (*ArrowConfig)(nil)
+
+func (cfg *Config) Validate() error {
+	err := cfg.Arrow.Validate()
+	if err != nil {
+		return err
+	}
+
+	uniq := map[string]bool{}
+	for _, k := range cfg.MetadataKeys {
+		l := strings.ToLower(k)
+		if _, has := uniq[l]; has {
+			return fmt.Errorf("duplicate entry in metadata_keys: %q (case-insensitive)", l)
+		}
+		uniq[l] = true
+	}
+
+	return nil
+}
 
 func (cfg *Config) Validate() error {
 	err := cfg.Arrow.Validate()

@@ -4,7 +4,6 @@
 package filestorage
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/bbolt"
-	"go.opentelemetry.io/collector/extension/experimental/storage"
+	"go.opentelemetry.io/collector/extension/xextension/storage"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 )
@@ -24,10 +23,10 @@ func TestClientOperations(t *testing.T) {
 	client, err := newClient(zap.NewNop(), dbFile, time.Second, &CompactionConfig{}, false)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		require.NoError(t, client.Close(context.TODO()))
+		require.NoError(t, client.Close(t.Context()))
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 	testKey := "testKey"
 	testValue := []byte("testValue")
 
@@ -62,16 +61,16 @@ func TestClientBatchOperations(t *testing.T) {
 	client, err := newClient(zap.NewNop(), dbFile, time.Second, &CompactionConfig{}, false)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		require.NoError(t, client.Close(context.TODO()))
+		require.NoError(t, client.Close(t.Context()))
 	})
 
-	ctx := context.Background()
-	testSetEntries := []storage.Operation{
+	ctx := t.Context()
+	testSetEntries := []*storage.Operation{
 		storage.SetOperation("testKey1", []byte("testValue1")),
 		storage.SetOperation("testKey2", []byte("testValue2")),
 	}
 
-	testGetEntries := []storage.Operation{
+	testGetEntries := []*storage.Operation{
 		storage.GetOperation("testKey1"),
 		storage.GetOperation("testKey2"),
 	}
@@ -93,7 +92,7 @@ func TestClientBatchOperations(t *testing.T) {
 	}
 
 	// Update it (the first entry should be empty and the second one removed)
-	testEntriesUpdate := []storage.Operation{
+	testEntriesUpdate := []*storage.Operation{
 		storage.SetOperation("testKey1", []byte{}),
 		storage.DeleteOperation("testKey2"),
 	}
@@ -109,7 +108,7 @@ func TestClientBatchOperations(t *testing.T) {
 	}
 
 	// Delete it all
-	testEntriesDelete := []storage.Operation{
+	testEntriesDelete := []*storage.Operation{
 		storage.DeleteOperation("testKey1"),
 		storage.DeleteOperation("testKey2"),
 	}
@@ -142,7 +141,7 @@ func TestNewClientTransactionErrors(t *testing.T) {
 				return tx.DeleteBucket(defaultBucket)
 			},
 			validate: func(t *testing.T, c *fileStorageClient) {
-				value, err := c.Get(context.Background(), testKey)
+				value, err := c.Get(t.Context(), testKey)
 				require.Error(t, err)
 				require.Equal(t, "storage not initialized", err.Error())
 				require.Nil(t, value)
@@ -154,7 +153,7 @@ func TestNewClientTransactionErrors(t *testing.T) {
 				return tx.DeleteBucket(defaultBucket)
 			},
 			validate: func(t *testing.T, c *fileStorageClient) {
-				err := c.Set(context.Background(), testKey, testValue)
+				err := c.Set(t.Context(), testKey, testValue)
 				require.Error(t, err)
 				require.Equal(t, "storage not initialized", err.Error())
 			},
@@ -165,7 +164,7 @@ func TestNewClientTransactionErrors(t *testing.T) {
 				return tx.DeleteBucket(defaultBucket)
 			},
 			validate: func(t *testing.T, c *fileStorageClient) {
-				err := c.Delete(context.Background(), testKey)
+				err := c.Delete(t.Context(), testKey)
 				require.Error(t, err)
 				require.Equal(t, "storage not initialized", err.Error())
 			},
@@ -180,7 +179,7 @@ func TestNewClientTransactionErrors(t *testing.T) {
 			client, err := newClient(zap.NewNop(), dbFile, timeout, &CompactionConfig{}, false)
 			require.NoError(t, err)
 			t.Cleanup(func() {
-				require.NoError(t, client.Close(context.TODO()))
+				require.NoError(t, client.Close(t.Context()))
 			})
 
 			// Create a problem
@@ -259,17 +258,17 @@ func TestClientReboundCompaction(t *testing.T) {
 			}, false)
 			require.NoError(t, err)
 			t.Cleanup(func() {
-				require.NoError(t, client.Close(context.TODO()))
+				require.NoError(t, client.Close(t.Context()))
 			})
 
 			// 1. Fill up the database
-			ctx := context.Background()
+			ctx := t.Context()
 
 			entrySize := int64(400_000)
 
 			numEntries := int64(0)
 			for ; ; numEntries++ {
-				batchWrite := []storage.Operation{
+				batchWrite := []*storage.Operation{
 					storage.SetOperation(fmt.Sprintf("foo-%d", numEntries), make([]byte, entrySize)),
 					storage.SetOperation(fmt.Sprintf("bar-%d", numEntries), []byte("testValueBar")),
 				}
@@ -351,13 +350,13 @@ func TestClientConcurrentCompaction(t *testing.T) {
 	t.Cleanup(func() {
 		// At least one compaction should have happened
 		require.GreaterOrEqual(t, len(logObserver.FilterMessage("finished compaction").All()), 1)
-		require.NoError(t, client.Close(context.TODO()))
+		require.NoError(t, client.Close(t.Context()))
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Make sure the compaction conditions will be met by putting and deleting large chunk of data
-	batchWrite := []storage.Operation{
+	batchWrite := []*storage.Operation{
 		storage.SetOperation("large-payload", make([]byte, 10000000)),
 	}
 	err = client.Batch(ctx, batchWrite...)
@@ -369,7 +368,7 @@ func TestClientConcurrentCompaction(t *testing.T) {
 	clientOperationsThread := func(t *testing.T, id int) {
 		repeats := 10
 		for i := 0; i < repeats; i++ {
-			batchWrite := []storage.Operation{
+			batchWrite := []*storage.Operation{
 				storage.SetOperation(fmt.Sprintf("foo-%d-%d", id, i), make([]byte, 1000)),
 				storage.SetOperation(fmt.Sprintf("bar-%d-%d", id, i), []byte("testValueBar")),
 			}
@@ -393,7 +392,6 @@ func TestClientConcurrentCompaction(t *testing.T) {
 	}
 
 	for i := 0; i < 10; i++ {
-		i := i
 		t.Run(fmt.Sprintf("client-operations-thread-%d", i), func(t *testing.T) {
 			t.Parallel()
 			clientOperationsThread(t, i)
@@ -408,10 +406,10 @@ func BenchmarkClientGet(b *testing.B) {
 	client, err := newClient(zap.NewNop(), dbFile, time.Second, &CompactionConfig{}, false)
 	require.NoError(b, err)
 	b.Cleanup(func() {
-		require.NoError(b, client.Close(context.TODO()))
+		require.NoError(b, client.Close(b.Context()))
 	})
 
-	ctx := context.Background()
+	ctx := b.Context()
 	testKey := "testKey"
 
 	b.ResetTimer()
@@ -428,12 +426,12 @@ func BenchmarkClientGet100(b *testing.B) {
 	client, err := newClient(zap.NewNop(), dbFile, time.Second, &CompactionConfig{}, false)
 	require.NoError(b, err)
 	b.Cleanup(func() {
-		require.NoError(b, client.Close(context.TODO()))
+		require.NoError(b, client.Close(b.Context()))
 	})
 
-	ctx := context.Background()
+	ctx := b.Context()
 
-	testEntries := make([]storage.Operation, 100)
+	testEntries := make([]*storage.Operation, 100)
 	for i := 0; i < 100; i++ {
 		testEntries[i] = storage.GetOperation(fmt.Sprintf("testKey-%d", i))
 	}
@@ -451,10 +449,10 @@ func BenchmarkClientSet(b *testing.B) {
 	client, err := newClient(zap.NewNop(), dbFile, time.Second, &CompactionConfig{}, false)
 	require.NoError(b, err)
 	b.Cleanup(func() {
-		require.NoError(b, client.Close(context.TODO()))
+		require.NoError(b, client.Close(b.Context()))
 	})
 
-	ctx := context.Background()
+	ctx := b.Context()
 	testKey := "testKey"
 	testValue := []byte("testValue")
 
@@ -471,11 +469,11 @@ func BenchmarkClientSet100(b *testing.B) {
 	client, err := newClient(zap.NewNop(), dbFile, time.Second, &CompactionConfig{}, false)
 	require.NoError(b, err)
 	b.Cleanup(func() {
-		require.NoError(b, client.Close(context.TODO()))
+		require.NoError(b, client.Close(b.Context()))
 	})
-	ctx := context.Background()
+	ctx := b.Context()
 
-	testEntries := make([]storage.Operation, 100)
+	testEntries := make([]*storage.Operation, 100)
 	for i := 0; i < 100; i++ {
 		testEntries[i] = storage.SetOperation(fmt.Sprintf("testKey-%d", i), []byte("testValue"))
 	}
@@ -493,10 +491,10 @@ func BenchmarkClientDelete(b *testing.B) {
 	client, err := newClient(zap.NewNop(), dbFile, time.Second, &CompactionConfig{}, false)
 	require.NoError(b, err)
 	b.Cleanup(func() {
-		require.NoError(b, client.Close(context.TODO()))
+		require.NoError(b, client.Close(b.Context()))
 	})
 
-	ctx := context.Background()
+	ctx := b.Context()
 	testKey := "testKey"
 
 	b.ResetTimer()
@@ -519,10 +517,10 @@ func BenchmarkClientSetLargeDB(b *testing.B) {
 	client, err := newClient(zap.NewNop(), dbFile, time.Second, &CompactionConfig{}, false)
 	require.NoError(b, err)
 	b.Cleanup(func() {
-		require.NoError(b, client.Close(context.TODO()))
+		require.NoError(b, client.Close(b.Context()))
 	})
 
-	ctx := context.Background()
+	ctx := b.Context()
 
 	for n := 0; n < entryCount; n++ {
 		testKey = fmt.Sprintf("testKey-%d", n)
@@ -556,10 +554,10 @@ func BenchmarkClientInitLargeDB(b *testing.B) {
 	client, err := newClient(zap.NewNop(), dbFile, time.Second, &CompactionConfig{}, false)
 	require.NoError(b, err)
 	b.Cleanup(func() {
-		require.NoError(b, client.Close(context.TODO()))
+		require.NoError(b, client.Close(b.Context()))
 	})
 
-	ctx := context.Background()
+	ctx := b.Context()
 
 	for n := 0; n < entryCount; n++ {
 		testKey = fmt.Sprintf("testKey-%d", n)
@@ -593,10 +591,10 @@ func BenchmarkClientCompactLargeDBFile(b *testing.B) {
 	client, err := newClient(zap.NewNop(), dbFile, time.Second, &CompactionConfig{}, false)
 	require.NoError(b, err)
 	b.Cleanup(func() {
-		require.NoError(b, client.Close(context.TODO()))
+		require.NoError(b, client.Close(b.Context()))
 	})
 
-	ctx := context.Background()
+	ctx := b.Context()
 
 	for n := 0; n < entryCount; n++ {
 		testKey = fmt.Sprintf("testKey-%d", n)
@@ -637,10 +635,10 @@ func BenchmarkClientCompactDb(b *testing.B) {
 	client, err := newClient(zap.NewNop(), dbFile, time.Second, &CompactionConfig{}, false)
 	require.NoError(b, err)
 	b.Cleanup(func() {
-		require.NoError(b, client.Close(context.TODO()))
+		require.NoError(b, client.Close(b.Context()))
 	})
 
-	ctx := context.Background()
+	ctx := b.Context()
 
 	for n := 0; n < entryCount; n++ {
 		testKey = fmt.Sprintf("testKey-%d", n)

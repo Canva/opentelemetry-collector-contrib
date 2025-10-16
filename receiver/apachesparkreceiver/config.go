@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/collector/config/confighttp"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/apachesparkreceiver/internal/metadata"
 )
@@ -27,6 +27,9 @@ type Config struct {
 	metadata.MetricsBuilderConfig  `mapstructure:",squash"`
 	confighttp.ClientConfig        `mapstructure:",squash"`
 	ApplicationNames               []string `mapstructure:"application_names"`
+
+	// prevent unkeyed literal initialization
+	_ struct{}
 }
 
 // Validate validates missing and invalid configuration fields.

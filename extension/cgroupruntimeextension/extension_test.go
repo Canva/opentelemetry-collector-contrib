@@ -4,7 +4,6 @@
 package cgroupruntimeextension
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -53,9 +52,9 @@ func TestExtension(t *testing.T) {
 				allCalls++
 				return func() { allCalls++ }, _err
 			}
-			settings := extensiontest.NewNopSettings()
+			settings := extensiontest.NewNopSettings(extensiontest.NopType)
 			cg := newCgroupRuntime(test.config, settings.Logger, setterMock, func(_ float64) (undoFunc, error) { return setterMock() })
-			ctx := context.Background()
+			ctx := t.Context()
 
 			err := cg.Start(ctx, componenttest.NewNopHost())
 			require.NoError(t, err)

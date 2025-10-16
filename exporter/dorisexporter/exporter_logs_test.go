@@ -4,7 +4,7 @@
 package dorisexporter // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/dorisexporter"
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -15,7 +15,8 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
-	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
+	"go.uber.org/zap"
 )
 
 func TestPushLogData(t *testing.T) {
@@ -29,9 +30,10 @@ func TestPushLogData(t *testing.T) {
 	err = config.Validate()
 	require.NoError(t, err)
 
-	exporter := newLogsExporter(nil, config, componenttest.NewNopTelemetrySettings())
+	logger := zap.NewNop()
+	exporter := newLogsExporter(logger, config, componenttest.NewNopTelemetrySettings())
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	client, err := createDorisHTTPClient(ctx, config, nil, componenttest.NewNopTelemetrySettings())
 	require.NoError(t, err)
@@ -57,7 +59,7 @@ func TestPushLogData(t *testing.T) {
 		assert.Equal(t, http.ErrServerClosed, err)
 	}()
 
-	err0 := fmt.Errorf("Not Started")
+	err0 := errors.New("Not Started")
 	for i := 0; err0 != nil && i < 10; i++ { // until server started
 		err0 = exporter.pushLogData(ctx, simpleLogs(10))
 		time.Sleep(100 * time.Millisecond)
@@ -83,7 +85,7 @@ func simpleLogs(count int) plog.Logs {
 		r.SetSeverityNumber(plog.SeverityNumberError2)
 		r.SetSeverityText("error")
 		r.Body().SetStr("error message")
-		r.Attributes().PutStr(semconv.AttributeServiceNamespace, "default")
+		r.Attributes().PutStr(string(semconv.ServiceNamespaceKey), "default")
 		r.SetFlags(plog.DefaultLogRecordFlags)
 		r.SetTraceID([16]byte{1, 2, 3, byte(i)})
 		r.SetSpanID([8]byte{1, 2, 3, byte(i)})

@@ -27,22 +27,6 @@ func TestStabilityMetricsOTLP(t *testing.T) {
 		nil,
 		nil,
 		nil,
-	)
-}
-
-func TestStabilityMetricsOpenCensus(t *testing.T) {
-	scenarios.Scenario10kItemsPerSecond(
-		t,
-		datasenders.NewOCMetricDataSender(testbed.DefaultHost, testutil.GetAvailablePort(t)),
-		datareceivers.NewOCDataReceiver(testutil.GetAvailablePort(t)),
-		testbed.ResourceSpec{
-			ExpectedMaxCPU:      85,
-			ExpectedMaxRAM:      86,
-			ResourceCheckPeriod: resourceCheckPeriod,
-		},
-		contribPerfResultsSummary,
-		nil,
-		nil,
 		nil,
 	)
 }

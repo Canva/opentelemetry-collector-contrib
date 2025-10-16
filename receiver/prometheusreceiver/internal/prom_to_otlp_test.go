@@ -9,9 +9,7 @@ import (
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	conventions "go.opentelemetry.io/collector/semconv/v1.27.0"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/common/testutil"
+	conventions "go.opentelemetry.io/otel/semconv/v1.27.0"
 )
 
 type jobInstanceDefinition struct {
@@ -26,34 +24,34 @@ func makeK8sResource(jobInstance *jobInstanceDefinition, def *k8sResourceDefinit
 	resource := makeResourceWithJobInstanceScheme(jobInstance, true)
 	attrs := resource.Attributes()
 	if def.podName != "" {
-		attrs.PutStr(conventions.AttributeK8SPodName, def.podName)
+		attrs.PutStr(string(conventions.K8SPodNameKey), def.podName)
 	}
 	if def.podUID != "" {
-		attrs.PutStr(conventions.AttributeK8SPodUID, def.podUID)
+		attrs.PutStr(string(conventions.K8SPodUIDKey), def.podUID)
 	}
 	if def.container != "" {
-		attrs.PutStr(conventions.AttributeK8SContainerName, def.container)
+		attrs.PutStr(string(conventions.K8SContainerNameKey), def.container)
 	}
 	if def.node != "" {
-		attrs.PutStr(conventions.AttributeK8SNodeName, def.node)
+		attrs.PutStr(string(conventions.K8SNodeNameKey), def.node)
 	}
 	if def.rs != "" {
-		attrs.PutStr(conventions.AttributeK8SReplicaSetName, def.rs)
+		attrs.PutStr(string(conventions.K8SReplicaSetNameKey), def.rs)
 	}
 	if def.ds != "" {
-		attrs.PutStr(conventions.AttributeK8SDaemonSetName, def.ds)
+		attrs.PutStr(string(conventions.K8SDaemonSetNameKey), def.ds)
 	}
 	if def.ss != "" {
-		attrs.PutStr(conventions.AttributeK8SStatefulSetName, def.ss)
+		attrs.PutStr(string(conventions.K8SStatefulSetNameKey), def.ss)
 	}
 	if def.job != "" {
-		attrs.PutStr(conventions.AttributeK8SJobName, def.job)
+		attrs.PutStr(string(conventions.K8SJobNameKey), def.job)
 	}
 	if def.cronjob != "" {
-		attrs.PutStr(conventions.AttributeK8SCronJobName, def.cronjob)
+		attrs.PutStr(string(conventions.K8SCronJobNameKey), def.cronjob)
 	}
 	if def.ns != "" {
-		attrs.PutStr(conventions.AttributeK8SNamespaceName, def.ns)
+		attrs.PutStr(string(conventions.K8SNamespaceNameKey), def.ns)
 	}
 	return resource
 }
@@ -68,24 +66,6 @@ func makeResourceWithJobInstanceScheme(def *jobInstanceDefinition, hasHost bool)
 		attrs.PutStr("server.address", def.host)
 	}
 	attrs.PutStr("service.instance.id", def.instance)
-	attrs.PutStr("server.port", def.port)
-	attrs.PutStr("url.scheme", def.scheme)
-	return resource
-}
-
-func makeResourceWithJobInstanceSchemeDuplicate(def *jobInstanceDefinition, hasHost bool) pcommon.Resource {
-	resource := pcommon.NewResource()
-	attrs := resource.Attributes()
-	// Using hardcoded values to assert on outward expectations so that
-	// when variables change, these tests will fail and we'll have reports.
-	attrs.PutStr("service.name", def.job)
-	if hasHost {
-		attrs.PutStr("net.host.name", def.host)
-		attrs.PutStr("server.address", def.host)
-	}
-	attrs.PutStr("service.instance.id", def.instance)
-	attrs.PutStr("net.host.port", def.port)
-	attrs.PutStr("http.scheme", def.scheme)
 	attrs.PutStr("server.port", def.port)
 	attrs.PutStr("url.scheme", def.scheme)
 	return resource
@@ -353,7 +333,6 @@ func TestCreateNodeAndResourcePromToOTLP(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			testutil.SetFeatureGateForTest(t, removeOldSemconvFeatureGate, tt.removeOldSemconvFeatureGate)
 			got := CreateResource(tt.job, tt.instance, tt.sdLabels)

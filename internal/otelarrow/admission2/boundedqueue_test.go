@@ -14,12 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/config/configtelemetry"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"google.golang.org/grpc/codes"
-	grpccodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/otelarrow/netstats"
@@ -47,8 +45,6 @@ func newBQTest(t *testing.T, maxAdmit, maxWait uint64) bqTest {
 		sdkmetric.WithReader(reader),
 	)
 	settings.MeterProvider = provider
-	settings.MetricsLevel = configtelemetry.LevelDetailed
-
 	bq, err := NewBoundedQueue(component.MustNewID("admission_testing"), settings, maxAdmit, maxWait)
 	require.NoError(t, err)
 	return bqTest{
@@ -71,11 +67,13 @@ func (bq *bqTest) startWaiter(ctx context.Context, size uint64, relp *ReleaseFun
 }
 
 func (bq *bqTest) waitForPending(admitted, waiting uint64) {
+	// TODO: Remove time.Sleep below, see https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/42514
+	time.Sleep(20 * time.Millisecond)
 	require.Eventually(bq.t, func() bool {
 		bq.lock.Lock()
 		defer bq.lock.Unlock()
 		return bq.currentAdmitted == admitted && bq.currentWaiting == waiting
-	}, time.Second, 20*time.Millisecond)
+	}, 10*time.Second, 20*time.Millisecond)
 }
 
 func mkRepeat(x uint64, n int) []uint64 {
@@ -154,7 +152,7 @@ func TestBoundedQueueLimits(t *testing.T) {
 			timeout:        time.Second,
 			expectErrs: map[string]int{
 				// 20*50=1000 is half of the requests timing out
-				status.Error(grpccodes.Canceled, context.DeadlineExceeded.Error()).Error(): 50,
+				status.Error(codes.Canceled, context.DeadlineExceeded.Error()).Error(): 50,
 			},
 		},
 		{
@@ -192,7 +190,7 @@ func TestBoundedQueueLimits(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			bq := newBQTest(t, test.maxLimitAdmit, test.maxLimitWait)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			if test.timeout != 0 {
 				var cancel context.CancelFunc
@@ -266,7 +264,7 @@ func TestBoundedQueueLimits(t *testing.T) {
 	}
 }
 
-func (bq bqTest) verifyPoint(t *testing.T, m metricdata.Metrics) int64 {
+func (bqTest) verifyPoint(t *testing.T, m metricdata.Metrics) int64 {
 	switch a := m.Data.(type) {
 	case metricdata.Sum[int64]:
 		require.Len(t, a.DataPoints, 1)
@@ -283,12 +281,12 @@ func (bq bqTest) verifyPoint(t *testing.T, m metricdata.Metrics) int64 {
 	return -1
 }
 
-func (bq bqTest) verifyMetrics(t *testing.T) (inflight int64, waiting int64) {
+func (bq bqTest) verifyMetrics(t *testing.T) (inflight, waiting int64) {
 	inflight = -1
 	waiting = -1
 
 	var rm metricdata.ResourceMetrics
-	require.NoError(t, bq.reader.Collect(context.Background(), &rm))
+	require.NoError(t, bq.reader.Collect(t.Context(), &rm))
 
 	for _, sm := range rm.ScopeMetrics {
 		if sm.Scope.Name != expectScope {
@@ -315,7 +313,7 @@ func TestBoundedQueueLIFO(t *testing.T) {
 				t.Parallel()
 
 				bq := newBQTest(t, maxAdmit, maxAdmit)
-				ctx := context.Background()
+				ctx := t.Context()
 
 				// Fill the queue
 				relFirst, err := bq.Acquire(ctx, firstAcquire)
@@ -390,7 +388,7 @@ func TestBoundedQueueCancelation(t *testing.T) {
 	bq := newBQTest(t, maxAdmit, maxAdmit)
 
 	for number := range repetition {
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 
 		tester := func() {
 			// This acquire either succeeds or is canceled.
@@ -424,7 +422,7 @@ func TestBoundedQueueCancelation(t *testing.T) {
 func TestBoundedQueueNoop(t *testing.T) {
 	nq := NewUnboundedQueue()
 	for _, i := range mkRange(1, 100) {
-		rel, err := nq.Acquire(context.Background(), i<<20)
+		rel, err := nq.Acquire(t.Context(), i<<20)
 		require.NoError(t, err)
 		defer rel()
 	}

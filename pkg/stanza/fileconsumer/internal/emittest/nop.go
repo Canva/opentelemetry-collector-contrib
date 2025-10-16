@@ -9,6 +9,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/emit"
 )
 
-func Nop(_ context.Context, _ emit.Token) error {
+func Nop(_ context.Context, _ [][]byte, _ map[string]any, _ int64, _ []int64) error {
 	return nil
 }

@@ -31,6 +31,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/otelarrow/admission2"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/otelarrow/testdata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/otelarrowreceiver/internal/metadata"
 )
 
 const (
@@ -57,7 +58,7 @@ func (ts *testSink) unblock() {
 }
 
 func (ts *testSink) ConsumeTraces(ctx context.Context, td ptrace.Traces) error {
-	<-ts.Context.Done()
+	<-ts.Done()
 	return ts.TracesSink.ConsumeTraces(ctx, td)
 }
 
@@ -69,15 +70,15 @@ func TestExport_Success(t *testing.T) {
 	traceClient, selfExp, selfProv := makeTraceServiceClient(t, traceSink)
 
 	go traceSink.unblock()
-	resp, err := traceClient.Export(context.Background(), req)
+	resp, err := traceClient.Export(t.Context(), req)
 	require.NoError(t, err, "Failed to export trace: %v", err)
 	require.NotNil(t, resp, "The response is missing")
 
 	require.Len(t, traceSink.AllTraces(), 1)
-	assert.EqualValues(t, td, traceSink.AllTraces()[0])
+	assert.Equal(t, td, traceSink.AllTraces()[0])
 
 	// One self-tracing spans is issued.
-	require.NoError(t, selfProv.ForceFlush(context.Background()))
+	require.NoError(t, selfProv.ForceFlush(t.Context()))
 	require.Len(t, selfExp.GetSpans(), 1)
 }
 
@@ -87,14 +88,14 @@ func TestExport_EmptyRequest(t *testing.T) {
 	empty := ptraceotlp.NewExportRequest()
 
 	go traceSink.unblock()
-	resp, err := traceClient.Export(context.Background(), empty)
+	resp, err := traceClient.Export(t.Context(), empty)
 	assert.NoError(t, err, "Failed to export trace: %v", err)
 	assert.NotNil(t, resp, "The response is missing")
 
 	require.Empty(t, traceSink.AllTraces())
 
 	// No self-tracing spans are issued.
-	require.NoError(t, selfProv.ForceFlush(context.Background()))
+	require.NoError(t, selfProv.ForceFlush(t.Context()))
 	require.Empty(t, selfExp.GetSpans())
 }
 
@@ -103,12 +104,12 @@ func TestExport_ErrorConsumer(t *testing.T) {
 	req := ptraceotlp.NewExportRequestFromTraces(td)
 
 	traceClient, selfExp, selfProv := makeTraceServiceClient(t, consumertest.NewErr(errors.New("my error")))
-	resp, err := traceClient.Export(context.Background(), req)
+	resp, err := traceClient.Export(t.Context(), req)
 	assert.EqualError(t, err, "rpc error: code = Unknown desc = my error")
 	assert.Equal(t, ptraceotlp.ExportResponse{}, resp)
 
 	// One self-tracing spans is issued.
-	require.NoError(t, selfProv.ForceFlush(context.Background()))
+	require.NoError(t, selfProv.ForceFlush(t.Context()))
 	require.Len(t, selfExp.GetSpans(), 1)
 }
 
@@ -119,12 +120,12 @@ func TestExport_AdmissionRequestTooLarge(t *testing.T) {
 	traceClient, selfExp, selfProv := makeTraceServiceClient(t, traceSink)
 
 	go traceSink.unblock()
-	resp, err := traceClient.Export(context.Background(), req)
+	resp, err := traceClient.Export(t.Context(), req)
 	assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = rejecting request, request is too large")
 	assert.Equal(t, ptraceotlp.ExportResponse{}, resp)
 
 	// One self-tracing spans is issued.
-	require.NoError(t, selfProv.ForceFlush(context.Background()))
+	require.NoError(t, selfProv.ForceFlush(t.Context()))
 	require.Len(t, selfExp.GetSpans(), 1)
 }
 
@@ -143,7 +144,7 @@ func TestExport_AdmissionLimitExceeded(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func() {
 			defer wait.Done()
-			_, err := traceClient.Export(context.Background(), req)
+			_, err := traceClient.Export(t.Context(), req)
 			if err == nil {
 				// some succeed!
 				expectSuccess.Add(1)
@@ -157,7 +158,7 @@ func TestExport_AdmissionLimitExceeded(t *testing.T) {
 	wait.Wait()
 
 	// 10 self-tracing spans are issued
-	require.NoError(t, selfProv.ForceFlush(context.Background()))
+	require.NoError(t, selfProv.ForceFlush(t.Context()))
 	require.Len(t, selfExp.GetSpans(), 10)
 
 	// Expect the correct number of success and failure.
@@ -196,7 +197,7 @@ func otlpReceiverOnGRPCServer(t *testing.T, tc consumer.Traces) (net.Addr, *trac
 	telset := componenttest.NewNopTelemetrySettings()
 	telset.TracerProvider = tp
 
-	set := receivertest.NewNopSettings()
+	set := receivertest.NewNopSettings(metadata.Type)
 	set.TelemetrySettings = telset
 
 	set.ID = component.NewIDWithName(component.MustNewType("otlp"), "trace")

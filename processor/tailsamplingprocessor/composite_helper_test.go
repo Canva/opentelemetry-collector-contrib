@@ -45,19 +45,21 @@ func TestCompositeHelper(t *testing.T) {
 					Percent: 0, // will be populated with default
 				},
 			},
-		})
+		}, nil)
 		require.NoError(t, err)
 
 		expected := sampling.NewComposite(zap.NewNop(), 1000, []sampling.SubPolicyEvalParams{
 			{
 				Evaluator:         sampling.NewLatency(componenttest.NewNopTelemetrySettings(), 100, 0),
 				MaxSpansPerSecond: 250,
+				Name:              "test-composite-policy-1",
 			},
 			{
 				Evaluator:         sampling.NewLatency(componenttest.NewNopTelemetrySettings(), 200, 0),
 				MaxSpansPerSecond: 500,
+				Name:              "test-composite-policy-2",
 			},
-		}, sampling.MonotonicClock{})
+		}, sampling.MonotonicClock{}, false)
 		assert.Equal(t, expected, actual)
 	})
 
@@ -71,7 +73,7 @@ func TestCompositeHelper(t *testing.T) {
 					},
 				},
 			},
-		})
+		}, nil)
 		require.EqualError(t, err, "unknown sampling policy type composite")
 	})
 }

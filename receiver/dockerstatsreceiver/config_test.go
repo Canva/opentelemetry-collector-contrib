@@ -15,7 +15,8 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.opentelemetry.io/collector/confmap/xconfmap"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/docker"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver/internal/metadata"
@@ -89,7 +90,7 @@ func TestLoadConfig(t *testing.T) {
 			cfg := factory.CreateDefaultConfig()
 			require.NoError(t, sub.Unmarshal(cfg))
 
-			assert.NoError(t, component.ValidateConfig(cfg))
+			assert.NoError(t, xconfmap.Validate(cfg))
 			if diff := cmp.Diff(tt.expected, cfg, cmpopts.IgnoreUnexported(metadata.MetricConfig{}), cmpopts.IgnoreUnexported(metadata.ResourceAttributeConfig{})); diff != "" {
 				t.Errorf("Config mismatch (-expected +actual):\n%s", diff)
 			}
@@ -101,7 +102,7 @@ func TestValidateErrors(t *testing.T) {
 	cfg := &Config{ControllerConfig: scraperhelper.NewDefaultControllerConfig(), Config: docker.Config{
 		DockerAPIVersion: "1.25",
 	}}
-	assert.Equal(t, "endpoint must be specified", component.ValidateConfig(cfg).Error())
+	assert.ErrorContains(t, xconfmap.Validate(cfg), "endpoint must be specified")
 
 	cfg = &Config{
 		Config: docker.Config{
@@ -110,7 +111,7 @@ func TestValidateErrors(t *testing.T) {
 		},
 		ControllerConfig: scraperhelper.ControllerConfig{CollectionInterval: 1 * time.Second},
 	}
-	assert.Equal(t, `"api_version" 1.21 must be at least 1.25`, component.ValidateConfig(cfg).Error())
+	assert.ErrorContains(t, xconfmap.Validate(cfg), `"api_version" 1.21 must be at least 1.25`)
 
 	cfg = &Config{
 		Config: docker.Config{
@@ -119,7 +120,21 @@ func TestValidateErrors(t *testing.T) {
 		},
 		ControllerConfig: scraperhelper.ControllerConfig{},
 	}
-	assert.Equal(t, `"collection_interval": requires positive value`, component.ValidateConfig(cfg).Error())
+	assert.ErrorContains(t, xconfmap.Validate(cfg), `"collection_interval": requires positive value`)
+}
+
+func TestApiVersionCustomError(t *testing.T) {
+	sub := loadConf(t, "api_version_float.yaml", component.NewID(metadata.Type))
+	factory := NewFactory()
+	cfg := factory.CreateDefaultConfig()
+	err := sub.Unmarshal(cfg)
+	assert.ErrorContains(t, err,
+		`Hint: You may want to wrap the 'api_version' value in quotes (api_version: "1.40")`,
+	)
+
+	sub = loadConf(t, "api_version_string.yaml", component.NewID(metadata.Type))
+	err = sub.Unmarshal(cfg)
+	require.NoError(t, err)
 }
 
 func TestApiVersionCustomError(t *testing.T) {

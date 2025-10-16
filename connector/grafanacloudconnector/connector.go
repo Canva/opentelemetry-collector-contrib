@@ -40,9 +40,14 @@ type connectorImp struct {
 
 func newConnector(logger *zap.Logger, set component.TelemetrySettings, config component.Config) (*connectorImp, error) {
 	hm := newHostMetrics()
-	telemetryBuilder, err := metadata.NewTelemetryBuilder(set,
-		metadata.WithGrafanacloudHostCountCallback(func() int64 { return int64(hm.count()) }),
-	)
+	telemetryBuilder, err := metadata.NewTelemetryBuilder(set)
+	if err != nil {
+		return nil, err
+	}
+	err = telemetryBuilder.RegisterGrafanacloudHostCountCallback(func(_ context.Context, observer metric.Int64Observer) error {
+		observer.Observe(int64(hm.count()))
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +63,7 @@ func newConnector(logger *zap.Logger, set component.TelemetrySettings, config co
 }
 
 // Capabilities implements connector.Traces.
-func (c *connectorImp) Capabilities() consumer.Capabilities {
+func (*connectorImp) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: false}
 }
 

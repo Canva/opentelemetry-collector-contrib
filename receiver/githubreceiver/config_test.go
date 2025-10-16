@@ -12,9 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
+	"go.opentelemetry.io/collector/config/configopaque"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/otelcol/otelcoltest"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/githubreceiver/internal"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/githubreceiver/internal/metadata"
@@ -52,9 +53,19 @@ func TestLoadConfig(t *testing.T) {
 		},
 		Path:       "some/path",
 		HealthPath: "health/path",
-		RequiredHeader: RequiredHeader{
-			Key:   "key-present",
-			Value: "value-present",
+		RequiredHeaders: map[string]configopaque.String{
+			"key": "value-present",
+		},
+		GitHubHeaders: GitHubHeaders{
+			Customizable: map[string]string{
+				"User-Agent": "",
+			},
+			Fixed: map[string]string{
+				"X-GitHub-Delivery":   "",
+				"X-GitHub-Event":      "",
+				"X-GitHub-Hook-ID":    "",
+				"X-Hub-Signature-256": "",
+			},
 		},
 	}
 
@@ -77,9 +88,19 @@ func TestLoadConfig(t *testing.T) {
 			},
 			Path:       "some/path",
 			HealthPath: "health/path",
-			RequiredHeader: RequiredHeader{
-				Key:   "key-present",
-				Value: "value-present",
+			RequiredHeaders: map[string]configopaque.String{
+				"key": "value-present",
+			},
+			GitHubHeaders: GitHubHeaders{
+				Customizable: map[string]string{
+					"User-Agent": "",
+				},
+				Fixed: map[string]string{
+					"X-GitHub-Delivery":   "",
+					"X-GitHub-Event":      "",
+					"X-GitHub-Hook-ID":    "",
+					"X-Hub-Signature-256": "",
+				},
 			},
 		},
 	}
@@ -110,7 +131,7 @@ func TestLoadInvalidConfig_InvalidScraperKey(t *testing.T) {
 	// nolint:staticcheck
 	_, err = otelcoltest.LoadConfigAndValidate(filepath.Join("testdata", "config-invalidscraperkey.yaml"), factories)
 
-	require.ErrorContains(t, err, "error reading configuration for \"github\": invalid scraper key: \"invalidscraperkey\"")
+	require.ErrorContains(t, err, "invalid scraper key: \"invalidscraperkey\"")
 }
 
 func TestConfig_Unmarshal(t *testing.T) {

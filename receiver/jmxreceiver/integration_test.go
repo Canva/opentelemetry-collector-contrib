@@ -6,7 +6,6 @@
 package jmxreceiver
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,7 +15,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.opentelemetry.io/collector/component"
@@ -27,49 +25,69 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/scraperinttest"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jmxreceiver/internal/metadata"
 )
 
 const jmxPort = "7199"
 
-var jmxJarReleases = map[string]string{
-	"1.26.0-alpha": "https://repo1.maven.org/maven2/io/opentelemetry/contrib/opentelemetry-jmx-metrics/1.26.0-alpha/opentelemetry-jmx-metrics-1.26.0-alpha.jar",
-	"1.10.0-alpha": "https://repo1.maven.org/maven2/io/opentelemetry/contrib/opentelemetry-jmx-metrics/1.10.0-alpha/opentelemetry-jmx-metrics-1.10.0-alpha.jar",
+type integrationConfig struct {
+	downloadURL string
+	jmxConfig   string
 }
 
-type JMXIntegrationSuite struct {
-	suite.Suite
-	VersionToJar map[string]string
+var jmxJarReleases = map[string]integrationConfig{
+	"1.26.0-alpha": {
+		downloadURL: "https://repo1.maven.org/maven2/io/opentelemetry/contrib/opentelemetry-jmx-metrics/1.26.0-alpha/opentelemetry-jmx-metrics-1.26.0-alpha.jar",
+	},
+	"1.10.0-alpha": {
+		downloadURL: "https://repo1.maven.org/maven2/io/opentelemetry/contrib/opentelemetry-jmx-metrics/1.10.0-alpha/opentelemetry-jmx-metrics-1.10.0-alpha.jar",
+	},
+	"1.46.0-alpha-scraper": {
+		downloadURL: "https://repo1.maven.org/maven2/io/opentelemetry/contrib/opentelemetry-jmx-scraper/1.46.0-alpha/opentelemetry-jmx-scraper-1.46.0-alpha.jar",
+	},
+	"1.46.0-alpha-scraper-custom-jmxconfig": {
+		downloadURL: "https://repo1.maven.org/maven2/io/opentelemetry/contrib/opentelemetry-jmx-scraper/1.46.0-alpha/opentelemetry-jmx-scraper-1.46.0-alpha.jar",
+		jmxConfig:   filepath.Join("testdata", "integration", "1.46.0-alpha-scraper-custom-jmxconfig", "simple-cassandra.yaml"),
+	},
 }
 
 // It is recommended that this test be run locally with a longer timeout than the default 30s
 // go test -timeout 60s -run ^TestJMXIntegration$ github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jmxreceiver
 func TestJMXIntegration(t *testing.T) {
-	suite.Run(t, new(JMXIntegrationSuite))
-}
+	versionToJar := setupJARs(t)
+	t.Cleanup(func() {
+		cleanupJARs(t, versionToJar)
+	})
 
-func (suite *JMXIntegrationSuite) SetupSuite() {
-	suite.VersionToJar = make(map[string]string)
-	for version, url := range jmxJarReleases {
-		jarPath, err := downloadJMXMetricGathererJAR(url)
-		suite.VersionToJar[version] = jarPath
-		suite.Require().NoError(err)
+	for version, jar := range versionToJar {
+		t.Run(version, integrationTest(version, jar, jmxJarReleases[version].jmxConfig))
 	}
 }
 
-func (suite *JMXIntegrationSuite) TearDownSuite() {
-	for _, path := range suite.VersionToJar {
-		suite.Require().NoError(os.Remove(path))
+func setupJARs(t *testing.T) map[string]string {
+	versionToJar := make(map[string]string)
+	for version, config := range jmxJarReleases {
+		jarPath, err := downloadJMXJAR(t, config.downloadURL)
+		require.NoError(t, err)
+		versionToJar[version] = jarPath
+	}
+	return versionToJar
+}
+
+func cleanupJARs(t *testing.T, versionToJar map[string]string) {
+	for _, path := range versionToJar {
+		require.NoError(t, os.Remove(path))
 	}
 }
 
-func downloadJMXMetricGathererJAR(url string) (string, error) {
+func downloadJMXJAR(t *testing.T, url string) (string, error) {
 	resp, err := http.Get(url) //nolint:gosec
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	file, err := os.CreateTemp("", "jmx-metrics.jar")
+	file, err := os.CreateTemp(t.TempDir(), "jmx-metrics.jar")
 	if err != nil {
 		return "", err
 	}
@@ -79,13 +97,7 @@ func downloadJMXMetricGathererJAR(url string) (string, error) {
 	return file.Name(), err
 }
 
-func (suite *JMXIntegrationSuite) TestJMXReceiverHappyPath() {
-	for version, jar := range suite.VersionToJar {
-		suite.T().Run(version, integrationTest(version, jar))
-	}
-}
-
-func integrationTest(version string, jar string) func(*testing.T) {
+func integrationTest(version, jar, jmxConfig string) func(*testing.T) {
 	return scraperinttest.NewIntegrationTest(
 		NewFactory(),
 		scraperinttest.WithContainerRequest(
@@ -110,7 +122,11 @@ func integrationTest(version string, jar string) func(*testing.T) {
 				rCfg.CollectionInterval = 3 * time.Second
 				rCfg.JARPath = jar
 				rCfg.Endpoint = fmt.Sprintf("%v:%s", ci.Host(t), ci.MappedPort(t, jmxPort))
-				rCfg.TargetSystem = "cassandra"
+				if jmxConfig != "" {
+					rCfg.JmxConfigs = jmxConfig
+				} else {
+					rCfg.TargetSystem = "cassandra"
+				}
 				rCfg.Username = "cassandra"
 				rCfg.Password = "cassandra"
 				rCfg.ResourceAttributes = map[string]string{
@@ -126,6 +142,7 @@ func integrationTest(version string, jar string) func(*testing.T) {
 			}),
 		scraperinttest.WithExpectedFile(filepath.Join("testdata", "integration", version, "expected.yaml")),
 		scraperinttest.WithCompareOptions(
+			pmetrictest.IgnoreScopeMetricsOrder(),
 			pmetrictest.IgnoreStartTimestamp(),
 			pmetrictest.IgnoreTimestamp(),
 			pmetrictest.IgnoreResourceMetricsOrder(),
@@ -137,7 +154,7 @@ func integrationTest(version string, jar string) func(*testing.T) {
 }
 
 func TestJMXReceiverInvalidOTLPEndpointIntegration(t *testing.T) {
-	params := receivertest.NewNopSettings()
+	params := receivertest.NewNopSettings(metadata.Type)
 	cfg := &Config{
 		CollectionInterval: 100 * time.Millisecond,
 		Endpoint:           "service:jmx:rmi:///jndi/rmi://localhost:7199/jmxrmi",
@@ -153,9 +170,9 @@ func TestJMXReceiverInvalidOTLPEndpointIntegration(t *testing.T) {
 	receiver := newJMXMetricReceiver(params, cfg, consumertest.NewNop())
 	require.NotNil(t, receiver)
 	defer func() {
-		require.EqualError(t, receiver.Shutdown(context.Background()), "no subprocess.cancel().  Has it been started properly?")
+		require.EqualError(t, receiver.Shutdown(t.Context()), "no subprocess.cancel().  Has it been started properly?")
 	}()
 
-	err := receiver.Start(context.Background(), componenttest.NewNopHost())
+	err := receiver.Start(t.Context(), componenttest.NewNopHost())
 	require.ErrorContains(t, err, "listen tcp: lookup <invalid>:")
 }

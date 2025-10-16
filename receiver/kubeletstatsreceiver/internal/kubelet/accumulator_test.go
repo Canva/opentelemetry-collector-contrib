@@ -53,15 +53,15 @@ func TestMetadataErrorCases(t *testing.T) {
 						},
 					},
 				},
-			}, NodeCapacity{}, nil),
+			}, NodeInfo{}, nil),
 			testScenario: func(acc metricDataAccumulator) {
 				now := metav1.Now()
-				podStats := stats.PodStats{
+				podStats := &stats.PodStats{
 					PodRef: stats.PodReference{
 						UID: "pod-uid-123",
 					},
 				}
-				containerStats := stats.ContainerStats{
+				containerStats := &stats.ContainerStats{
 					Name:      "container1",
 					StartTime: now,
 				}
@@ -79,14 +79,14 @@ func TestMetadataErrorCases(t *testing.T) {
 			metricGroupsToCollect: map[MetricGroup]bool{
 				VolumeMetricGroup: true,
 			},
-			metadata: NewMetadata([]MetadataLabel{MetadataLabelVolumeType}, nil, NodeCapacity{}, nil),
+			metadata: NewMetadata([]MetadataLabel{MetadataLabelVolumeType}, nil, NodeInfo{}, nil),
 			testScenario: func(acc metricDataAccumulator) {
-				podStats := stats.PodStats{
+				podStats := &stats.PodStats{
 					PodRef: stats.PodReference{
 						UID: "pod-uid-123",
 					},
 				}
-				volumeStats := stats.VolumeStats{
+				volumeStats := &stats.VolumeStats{
 					Name: "volume-1",
 				}
 
@@ -121,14 +121,14 @@ func TestMetadataErrorCases(t *testing.T) {
 						},
 					},
 				},
-			}, NodeCapacity{}, nil),
+			}, NodeInfo{}, nil),
 			testScenario: func(acc metricDataAccumulator) {
-				podStats := stats.PodStats{
+				podStats := &stats.PodStats{
 					PodRef: stats.PodReference{
 						UID: "pod-uid-123",
 					},
 				}
-				volumeStats := stats.VolumeStats{
+				volumeStats := &stats.VolumeStats{
 					Name: "volume-1",
 				}
 
@@ -165,18 +165,18 @@ func TestMetadataErrorCases(t *testing.T) {
 						},
 					},
 				},
-			}, NodeCapacity{}, nil),
+			}, NodeInfo{}, nil),
 			detailedPVCLabelsSetterOverride: func(*metadata.ResourceBuilder, string, string, string) error {
 				// Mock failure cases.
 				return errors.New("")
 			},
 			testScenario: func(acc metricDataAccumulator) {
-				podStats := stats.PodStats{
+				podStats := &stats.PodStats{
 					PodRef: stats.PodReference{
 						UID: "pod-uid-123",
 					},
 				}
-				volumeStats := stats.VolumeStats{
+				volumeStats := &stats.VolumeStats{
 					Name: "volume-0",
 				}
 
@@ -201,10 +201,10 @@ func TestMetadataErrorCases(t *testing.T) {
 				logger:                logger,
 				metricGroupsToCollect: tt.metricGroupsToCollect,
 				mbs: &metadata.MetricsBuilders{
-					NodeMetricsBuilder:      metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings()),
-					PodMetricsBuilder:       metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings()),
-					ContainerMetricsBuilder: metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings()),
-					OtherMetricsBuilder:     metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings()),
+					NodeMetricsBuilder:      metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings(metadata.Type)),
+					PodMetricsBuilder:       metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings(metadata.Type)),
+					ContainerMetricsBuilder: metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings(metadata.Type)),
+					OtherMetricsBuilder:     metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings(metadata.Type)),
 				},
 			}
 
@@ -228,22 +228,22 @@ func TestNilHandling(t *testing.T) {
 			VolumeMetricGroup:    true,
 		},
 		mbs: &metadata.MetricsBuilders{
-			NodeMetricsBuilder:      metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings()),
-			PodMetricsBuilder:       metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings()),
-			ContainerMetricsBuilder: metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings()),
-			OtherMetricsBuilder:     metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings()),
+			NodeMetricsBuilder:      metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings(metadata.Type)),
+			PodMetricsBuilder:       metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings(metadata.Type)),
+			ContainerMetricsBuilder: metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings(metadata.Type)),
+			OtherMetricsBuilder:     metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings(metadata.Type)),
 		},
 	}
 	assert.NotPanics(t, func() {
 		acc.nodeStats(stats.NodeStats{})
 	})
 	assert.NotPanics(t, func() {
-		acc.podStats(stats.PodStats{})
+		acc.podStats(&stats.PodStats{})
 	})
 	assert.NotPanics(t, func() {
-		acc.containerStats(stats.PodStats{}, stats.ContainerStats{})
+		acc.containerStats(&stats.PodStats{}, &stats.ContainerStats{})
 	})
 	assert.NotPanics(t, func() {
-		acc.volumeStats(stats.PodStats{}, stats.VolumeStats{})
+		acc.volumeStats(&stats.PodStats{}, &stats.VolumeStats{})
 	})
 }
