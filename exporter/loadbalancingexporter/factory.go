@@ -36,7 +36,7 @@ func NewFactory() exporter.Factory {
 func createDefaultConfig() component.Config {
 	otlpFactory := otlpexporter.NewFactory()
 	otlpDefaultCfg := otlpFactory.CreateDefaultConfig().(*otlpexporter.Config)
-	otlpDefaultCfg.ClientConfig.Endpoint = "placeholder:4317"
+	otlpDefaultCfg.Endpoint = "placeholder:4317"
 
 	return &Config{
 		// By default we disable resilience options on loadbalancing exporter level
@@ -49,15 +49,18 @@ func createDefaultConfig() component.Config {
 
 func buildExporterConfig(cfg *Config, endpoint string) otlpexporter.Config {
 	oCfg := cfg.Protocol.OTLP
-	oCfg.ClientConfig.Endpoint = endpoint
+	oCfg.Endpoint = endpoint
 
 	return oCfg
 }
 
-func buildExporterSettings(typ component.Type, params exporter.Settings, endpoint string) exporter.Settings {
+func buildExporterSettings(params exporter.Settings, endpoint string) exporter.Settings {
 	// Override child exporter ID to segregate metrics from loadbalancing top level
-	childName := fmt.Sprintf("%s_%s", params.ID, endpoint)
-	params.ID = component.NewIDWithName(typ, childName)
+	childName := endpoint
+	if params.ID.Name() != "" {
+		childName = fmt.Sprintf("%s_%s", params.ID.Name(), childName)
+	}
+	params.ID = component.NewIDWithName(params.ID.Type(), childName)
 	// Add "endpoint" attribute to child exporter logger to segregate logs from loadbalancing top level
 	params.Logger = params.Logger.With(zap.String(zapEndpointKey, endpoint))
 
@@ -71,7 +74,7 @@ func buildExporterResilienceOptions(options []exporterhelper.Option, cfg *Config
 	if cfg.QueueSettings.Enabled {
 		options = append(options, exporterhelper.WithQueue(cfg.QueueSettings))
 	}
-	if cfg.Enabled {
+	if cfg.BackOffConfig.Enabled {
 		options = append(options, exporterhelper.WithRetry(cfg.BackOffConfig))
 	}
 

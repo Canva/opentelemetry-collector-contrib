@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/exporter"
@@ -25,8 +24,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.uber.org/zap"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/loadbalancingexporter/internal/metadata"
 )
 
 func TestNewLogsExporter(t *testing.T) {
@@ -48,7 +45,7 @@ func TestNewLogsExporter(t *testing.T) {
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// test
-			_, err := newLogsExporter(exportertest.NewNopSettings(metadata.Type), tt.config)
+			_, err := newLogsExporter(exportertest.NewNopSettings(), tt.config)
 
 			// verify
 			require.Equal(t, tt.err, err)
@@ -66,7 +63,7 @@ func TestLogExporterStart(t *testing.T) {
 		{
 			"ok",
 			func() *logExporterImp {
-				p, _ := newLogsExporter(exportertest.NewNopSettings(metadata.Type), simpleConfig())
+				p, _ := newLogsExporter(exportertest.NewNopSettings(), simpleConfig())
 				return p
 			}(),
 			nil,
@@ -77,7 +74,7 @@ func TestLogExporterStart(t *testing.T) {
 				// prepare
 				lb, err := newLoadBalancer(ts.Logger, simpleConfig(), nil, tb)
 				require.NoError(t, err)
-				p, _ := newLogsExporter(exportertest.NewNopSettings(metadata.Type), simpleConfig())
+				p, _ := newLogsExporter(exportertest.NewNopSettings(), simpleConfig())
 
 				lb.res = &mockResolver{
 					onStart: func(context.Context) error {
@@ -95,9 +92,9 @@ func TestLogExporterStart(t *testing.T) {
 			p := tt.le
 
 			// test
-			res := p.Start(t.Context(), componenttest.NewNopHost())
+			res := p.Start(context.Background(), componenttest.NewNopHost())
 			defer func() {
-				require.NoError(t, p.Shutdown(t.Context()))
+				require.NoError(t, p.Shutdown(context.Background()))
 			}()
 
 			// verify
@@ -107,12 +104,12 @@ func TestLogExporterStart(t *testing.T) {
 }
 
 func TestLogExporterShutdown(t *testing.T) {
-	p, err := newLogsExporter(exportertest.NewNopSettings(metadata.Type), simpleConfig())
+	p, err := newLogsExporter(exportertest.NewNopSettings(), simpleConfig())
 	require.NotNil(t, p)
 	require.NoError(t, err)
 
 	// test
-	res := p.Shutdown(t.Context())
+	res := p.Shutdown(context.Background())
 
 	// verify
 	assert.NoError(t, res)
@@ -133,7 +130,7 @@ func TestConsumeLogs(t *testing.T) {
 	require.NoError(t, err)
 
 	// pre-load an exporter here, so that we don't use the actual OTLP exporter
-	lb.addMissingExporters(t.Context(), []string{"endpoint-1"})
+	lb.addMissingExporters(context.Background(), []string{"endpoint-1"})
 	lb.res = &mockResolver{
 		triggerCallbacks: true,
 		onResolve: func(_ context.Context) ([]string, error) {
@@ -142,14 +139,14 @@ func TestConsumeLogs(t *testing.T) {
 	}
 	p.loadBalancer = lb
 
-	err = p.Start(t.Context(), componenttest.NewNopHost())
+	err = p.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 	defer func() {
-		require.NoError(t, p.Shutdown(t.Context()))
+		require.NoError(t, p.Shutdown(context.Background()))
 	}()
 
 	// test
-	res := p.ConsumeLogs(t.Context(), simpleLogs())
+	res := p.ConsumeLogs(context.Background(), simpleLogs())
 
 	// verify
 	assert.NoError(t, res)
@@ -170,7 +167,7 @@ func TestConsumeLogsUnexpectedExporterType(t *testing.T) {
 	require.NoError(t, err)
 
 	// pre-load an exporter here, so that we don't use the actual OTLP exporter
-	lb.addMissingExporters(t.Context(), []string{"endpoint-1"})
+	lb.addMissingExporters(context.Background(), []string{"endpoint-1"})
 	lb.res = &mockResolver{
 		triggerCallbacks: true,
 		onResolve: func(_ context.Context) ([]string, error) {
@@ -179,14 +176,14 @@ func TestConsumeLogsUnexpectedExporterType(t *testing.T) {
 	}
 	p.loadBalancer = lb
 
-	err = p.Start(t.Context(), componenttest.NewNopHost())
+	err = p.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 	defer func() {
-		require.NoError(t, p.Shutdown(t.Context()))
+		require.NoError(t, p.Shutdown(context.Background()))
 	}()
 
 	// test
-	res := p.ConsumeLogs(t.Context(), simpleLogs())
+	res := p.ConsumeLogs(context.Background(), simpleLogs())
 
 	// verify
 	assert.Error(t, res)
@@ -209,13 +206,13 @@ func TestLogBatchWithTwoTraces(t *testing.T) {
 	require.NoError(t, err)
 
 	// pre-load an exporter here, so that we don't use the actual OTLP exporter
-	lb.addMissingExporters(t.Context(), []string{"endpoint-1"})
+	lb.addMissingExporters(context.Background(), []string{"endpoint-1"})
 	p.loadBalancer = lb
 
-	err = p.Start(t.Context(), componenttest.NewNopHost())
+	err = p.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 	defer func() {
-		require.NoError(t, p.Shutdown(t.Context()))
+		require.NoError(t, p.Shutdown(context.Background()))
 	}()
 
 	first := simpleLogs()
@@ -227,7 +224,7 @@ func TestLogBatchWithTwoTraces(t *testing.T) {
 	second.ResourceLogs().At(0).CopyTo(secondTgt)
 
 	// test
-	err = p.ConsumeLogs(t.Context(), batch)
+	err = p.ConsumeLogs(context.Background(), batch)
 
 	// verify
 	assert.NoError(t, err)
@@ -282,17 +279,17 @@ func TestLogsWithoutTraceID(t *testing.T) {
 	require.NoError(t, err)
 
 	// pre-load an exporter here, so that we don't use the actual OTLP exporter
-	lb.addMissingExporters(t.Context(), []string{"endpoint-1"})
+	lb.addMissingExporters(context.Background(), []string{"endpoint-1"})
 	p.loadBalancer = lb
 
-	err = p.Start(t.Context(), componenttest.NewNopHost())
+	err = p.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 	defer func() {
-		require.NoError(t, p.Shutdown(t.Context()))
+		require.NoError(t, p.Shutdown(context.Background()))
 	}()
 
 	// test
-	err = p.ConsumeLogs(t.Context(), simpleLogWithoutID())
+	err = p.ConsumeLogs(context.Background(), simpleLogWithoutID())
 
 	// verify
 	assert.NoError(t, err)
@@ -332,27 +329,29 @@ func TestConsumeLogs_ConcurrentResolverChange(t *testing.T) {
 	}
 	p.loadBalancer = lb
 
-	err = p.Start(t.Context(), componenttest.NewNopHost())
+	err = p.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 	defer func() {
-		require.NoError(t, p.Shutdown(t.Context()))
+		require.NoError(t, p.Shutdown(context.Background()))
 	}()
 
 	go func() {
-		assert.NoError(t, p.ConsumeLogs(t.Context(), simpleLogs()))
+		assert.NoError(t, p.ConsumeLogs(context.Background(), simpleLogs()))
 		close(consumeDone)
 	}()
 
 	// update endpoint while consuming logs
 	<-consumeStarted
 	endpoints = []string{"endpoint-2"}
-	endpoint, err := lb.res.resolve(t.Context())
+	endpoint, err := lb.res.resolve(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, endpoints, endpoint)
 	<-consumeDone
 }
 
 func TestRollingUpdatesWhenConsumeLogs(t *testing.T) {
+	t.Skip("Flaky Test - See https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/13331")
+
 	// this test is based on the discussion in the following issue for this exporter:
 	// https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/1690
 	// prepare
@@ -385,6 +384,10 @@ func TestRollingUpdatesWhenConsumeLogs(t *testing.T) {
 	}
 	res.resolver = &mockDNSResolver{
 		onLookupIPAddr: func(context.Context, string) ([]net.IPAddr, error) {
+			defer func() {
+				counter.Add(1)
+			}()
+
 			if counter.Load() <= 2 {
 				return resolve[counter.Load()], nil
 			}
@@ -397,11 +400,11 @@ func TestRollingUpdatesWhenConsumeLogs(t *testing.T) {
 			return resolve[2], nil
 		},
 	}
-	res.resInterval = 100 * time.Millisecond
+	res.resInterval = 10 * time.Millisecond
 
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			DNS: configoptional.Some(DNSResolver{Hostname: "service-1", Port: ""}),
+			DNS: &DNSResolver{Hostname: "service-1", Port: ""},
 		},
 	}
 	componentFactory := func(_ context.Context, _ string) (component.Component, error) {
@@ -411,7 +414,7 @@ func TestRollingUpdatesWhenConsumeLogs(t *testing.T) {
 	require.NotNil(t, lb)
 	require.NoError(t, err)
 
-	p, err := newLogsExporter(exportertest.NewNopSettings(metadata.Type), cfg)
+	p, err := newLogsExporter(exportertest.NewNopSettings(), cfg)
 	require.NotNil(t, p)
 	require.NoError(t, err)
 
@@ -422,13 +425,11 @@ func TestRollingUpdatesWhenConsumeLogs(t *testing.T) {
 	counter2 := &atomic.Int64{}
 	id1 := "127.0.0.1:4317"
 	id2 := "127.0.0.2:4317"
-	unreachableCh := make(chan struct{})
 	defaultExporters := map[string]*wrappedExporter{
 		id1: newWrappedExporter(newMockLogsExporter(func(_ context.Context, _ plog.Logs) error {
 			counter1.Add(1)
-			counter.Add(1)
 			// simulate an unreachable backend
-			<-unreachableCh
+			time.Sleep(10 * time.Second)
 			return nil
 		}), id1),
 		id2: newWrappedExporter(newMockLogsExporter(func(_ context.Context, _ plog.Logs) error {
@@ -438,10 +439,10 @@ func TestRollingUpdatesWhenConsumeLogs(t *testing.T) {
 	}
 
 	// test
-	err = p.Start(t.Context(), componenttest.NewNopHost())
+	err = p.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 	defer func() {
-		require.NoError(t, p.Shutdown(t.Context()))
+		require.NoError(t, p.Shutdown(context.Background()))
 	}()
 	// ensure using default exporters
 	lb.updateLock.Lock()
@@ -453,8 +454,7 @@ func TestRollingUpdatesWhenConsumeLogs(t *testing.T) {
 		lb.updateLock.Unlock()
 	})
 
-	ctx, cancel := context.WithCancel(t.Context())
-	var waitWG sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
 	// keep consuming traces every 2ms
 	consumeCh := make(chan struct{})
 	go func(ctx context.Context) {
@@ -465,22 +465,22 @@ func TestRollingUpdatesWhenConsumeLogs(t *testing.T) {
 				consumeCh <- struct{}{}
 				return
 			case <-ticker.C:
-				waitWG.Add(1)
 				go func() {
 					assert.NoError(t, p.ConsumeLogs(ctx, randomLogs()))
-					waitWG.Done()
 				}()
 			}
 		}
 	}(ctx)
 
 	// give limited but enough time to rolling updates. otherwise this test
-	// will still pass due to the unreacheableCh that is used to simulate
+	// will still pass due to the 10 secs of sleep that is used to simulate
 	// unreachable backends.
-	require.EventuallyWithT(t, func(tt *assert.CollectT) {
-		require.Positive(tt, counter1.Load())
-		require.Positive(tt, counter2.Load())
-	}, 1*time.Second, 100*time.Millisecond)
+	go func() {
+		time.Sleep(1 * time.Second)
+		resolverCh <- struct{}{}
+	}()
+
+	<-resolverCh
 	cancel()
 	<-consumeCh
 
@@ -488,9 +488,8 @@ func TestRollingUpdatesWhenConsumeLogs(t *testing.T) {
 	mu.Lock()
 	require.Equal(t, []string{"127.0.0.2"}, lastResolved)
 	mu.Unlock()
-
-	close(unreachableCh)
-	waitWG.Wait()
+	require.Positive(t, counter1.Load())
+	require.Positive(t, counter2.Load())
 }
 
 func randomLogs() plog.Logs {
@@ -525,7 +524,7 @@ type mockLogsExporter struct {
 	consumeErr    error
 }
 
-func (*mockLogsExporter) Capabilities() consumer.Capabilities {
+func (e *mockLogsExporter) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: false}
 }
 

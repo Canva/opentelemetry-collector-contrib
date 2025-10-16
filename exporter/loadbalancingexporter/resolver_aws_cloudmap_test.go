@@ -4,6 +4,7 @@
 package loadbalancingexporter
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -45,9 +46,9 @@ func TestInitialCloudMapResolution(t *testing.T) {
 	res.onChange(func(endpoints []string) {
 		resolved = endpoints
 	})
-	require.NoError(t, res.start(t.Context()))
+	require.NoError(t, res.start(context.Background()))
 	defer func() {
-		require.NoError(t, res.shutdown(t.Context()))
+		require.NoError(t, res.shutdown(context.Background()))
 	}()
 
 	// verify
@@ -79,9 +80,9 @@ func TestInitialCloudMapResolutionWithPort(t *testing.T) {
 	res.onChange(func(endpoints []string) {
 		resolved = endpoints
 	})
-	require.NoError(t, res.start(t.Context()))
+	require.NoError(t, res.start(context.Background()))
 	defer func() {
-		require.NoError(t, res.shutdown(t.Context()))
+		require.NoError(t, res.shutdown(context.Background()))
 	}()
 
 	// verify

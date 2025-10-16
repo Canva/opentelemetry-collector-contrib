@@ -6,7 +6,6 @@ package loadbalancingexporter
 import (
 	"context"
 	"fmt"
-	"slices"
 	"testing"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -65,12 +63,12 @@ func TestK8sResolve(t *testing.T) {
 			}
 		}
 
-		cl := fake.NewClientset(endpoint)
+		cl := fake.NewSimpleClientset(endpoint)
 		_, tb := getTelemetryAssets(t)
 		res, err := newK8sResolver(cl, zap.NewNop(), service, ports, defaultListWatchTimeout, returnHostnames, tb)
 		require.NoError(t, err)
 
-		require.NoError(t, res.start(t.Context()))
+		require.NoError(t, res.start(context.Background()))
 		// verify endpoints should be the same as expectInit
 		assert.NoError(t, err)
 		assert.Equal(t, expectInit, res.Endpoints())
@@ -80,15 +78,15 @@ func TestK8sResolve(t *testing.T) {
 				clientset: cl,
 				resolver:  res,
 			}, func(*testing.T) {
-				require.NoError(t, res.shutdown(t.Context()))
+				require.NoError(t, res.shutdown(context.Background()))
 			}
 	}
 	tests := []struct {
-		name              string
-		args              args
-		simulateFn        func(*suiteContext, args) error
-		onChangeFn        func([]string)
-		expectedEndpoints []string
+		name       string
+		args       args
+		simulateFn func(*suiteContext, args) error
+		onChangeFn func([]string)
+		verifyFn   func(*suiteContext, args) error
 	}{
 		{
 			name: "add new IP to existing backends",
@@ -109,14 +107,22 @@ func TestK8sResolve(t *testing.T) {
 					return err
 				}
 				_, err = suiteCtx.clientset.CoreV1().Endpoints(args.namespace).
-					Patch(t.Context(), args.service, types.MergePatchType, data, metav1.PatchOptions{})
+					Patch(context.TODO(), args.service, types.MergePatchType, data, metav1.PatchOptions{})
 				return err
 			},
-			expectedEndpoints: []string{
-				"10.10.0.11:8080",
-				"10.10.0.11:9090",
-				"192.168.10.100:8080",
-				"192.168.10.100:9090",
+			verifyFn: func(ctx *suiteContext, _ args) error {
+				if _, err := ctx.resolver.resolve(context.Background()); err != nil {
+					return err
+				}
+
+				assert.Equal(t, []string{
+					"10.10.0.11:8080",
+					"10.10.0.11:9090",
+					"192.168.10.100:8080",
+					"192.168.10.100:9090",
+				}, ctx.resolver.Endpoints(), "resolver failed, endpoints not equal")
+
+				return nil
 			},
 		},
 		{
@@ -135,15 +141,23 @@ func TestK8sResolve(t *testing.T) {
 					return err
 				}
 				_, err = suiteCtx.clientset.CoreV1().Endpoints(args.namespace).
-					Patch(t.Context(), args.service, types.MergePatchType, data, metav1.PatchOptions{})
+					Patch(context.TODO(), args.service, types.MergePatchType, data, metav1.PatchOptions{})
 				return err
 			},
 			onChangeFn: func([]string) {
 				assert.Fail(t, "should not call onChange")
 			},
-			expectedEndpoints: []string{
-				"192.168.10.100:8080",
-				"192.168.10.100:9090",
+			verifyFn: func(ctx *suiteContext, _ args) error {
+				if _, err := ctx.resolver.resolve(context.Background()); err != nil {
+					return err
+				}
+
+				assert.Equal(t, []string{
+					"192.168.10.100:8080",
+					"192.168.10.100:9090",
+				}, ctx.resolver.Endpoints(), "resolver failed, endpoints not equal")
+
+				return nil
 			},
 		},
 		{
@@ -166,14 +180,22 @@ func TestK8sResolve(t *testing.T) {
 					return err
 				}
 				_, err = suiteCtx.clientset.CoreV1().Endpoints(args.namespace).
-					Patch(t.Context(), args.service, types.MergePatchType, data, metav1.PatchOptions{})
+					Patch(context.TODO(), args.service, types.MergePatchType, data, metav1.PatchOptions{})
 				return err
 			},
-			expectedEndpoints: []string{
-				"pod-0.lb.default:8080",
-				"pod-0.lb.default:9090",
-				"pod-1.lb.default:8080",
-				"pod-1.lb.default:9090",
+			verifyFn: func(ctx *suiteContext, _ args) error {
+				if _, err := ctx.resolver.resolve(context.Background()); err != nil {
+					return err
+				}
+
+				assert.Equal(t, []string{
+					"pod-0.lb.default:8080",
+					"pod-0.lb.default:9090",
+					"pod-1.lb.default:8080",
+					"pod-1.lb.default:9090",
+				}, ctx.resolver.Endpoints(), "resolver failed, endpoints not equal")
+
+				return nil
 			},
 		},
 		{
@@ -195,11 +217,19 @@ func TestK8sResolve(t *testing.T) {
 					return err
 				}
 				_, err = suiteCtx.clientset.CoreV1().Endpoints(args.namespace).
-					Patch(t.Context(), args.service, types.MergePatchType, data, metav1.PatchOptions{})
+					Patch(context.TODO(), args.service, types.MergePatchType, data, metav1.PatchOptions{})
 				return err
 			},
-			expectedEndpoints: []string{
-				"10.10.0.11:4317",
+			verifyFn: func(ctx *suiteContext, _ args) error {
+				if _, err := ctx.resolver.resolve(context.Background()); err != nil {
+					return err
+				}
+
+				assert.Equal(t, []string{
+					"10.10.0.11:4317",
+				}, ctx.resolver.Endpoints(), "resolver failed, endpoints not equal")
+
+				return nil
 			},
 		},
 		{
@@ -212,9 +242,15 @@ func TestK8sResolve(t *testing.T) {
 			},
 			simulateFn: func(suiteCtx *suiteContext, args args) error {
 				return suiteCtx.clientset.CoreV1().Endpoints(args.namespace).
-					Delete(t.Context(), args.service, metav1.DeleteOptions{})
+					Delete(context.TODO(), args.service, metav1.DeleteOptions{})
 			},
-			expectedEndpoints: nil,
+			verifyFn: func(suiteCtx *suiteContext, _ args) error {
+				if _, err := suiteCtx.resolver.resolve(context.Background()); err != nil {
+					return err
+				}
+				assert.Empty(t, suiteCtx.resolver.Endpoints(), "resolver failed, endpoints should empty")
+				return nil
+			},
 		},
 	}
 
@@ -230,31 +266,13 @@ func TestK8sResolve(t *testing.T) {
 			err := tt.simulateFn(suiteCtx, tt.args)
 			assert.NoError(t, err)
 
-			slices.Sort(tt.expectedEndpoints)
-
-			cErr := waitForCondition(t, 1200*time.Millisecond, 20*time.Millisecond, func(ctx context.Context) (bool, error) {
-				if _, err := suiteCtx.resolver.resolve(ctx); err != nil {
-					return false, err
-				}
-				got := suiteCtx.resolver.Endpoints()
-				return slices.Equal(tt.expectedEndpoints, got), nil
-			})
-			if cErr != nil {
-				t.Logf("waitForCondition: timed out waiting for resolver endpoints to match expected: %v", cErr)
-			}
-			assert.Equal(t, tt.expectedEndpoints, suiteCtx.resolver.Endpoints(), "resolver returned unexpected endpoints after update")
+			assert.Eventually(t, func() bool {
+				err := tt.verifyFn(suiteCtx, tt.args)
+				assert.NoError(t, err)
+				return true
+			}, time.Second, 20*time.Millisecond)
 		})
 	}
-}
-
-// waitForCondition will poll the condition function until it returns true or times out.
-// Any errors returned from the condition are treated as test failures.
-func waitForCondition(t *testing.T, timeout, interval time.Duration, condition func(context.Context) (bool, error)) error {
-	ctx, cancel := context.WithTimeout(t.Context(), timeout)
-	defer cancel()
-	t.Helper()
-
-	return wait.PollUntilContextTimeout(ctx, interval, timeout, true, condition)
 }
 
 func Test_newK8sResolver(t *testing.T) {
@@ -309,7 +327,7 @@ func Test_newK8sResolver(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, tb := getTelemetryAssets(t)
-			got, err := newK8sResolver(fake.NewClientset(), tt.args.logger, tt.args.service, tt.args.ports, defaultListWatchTimeout, false, tb)
+			got, err := newK8sResolver(fake.NewSimpleClientset(), tt.args.logger, tt.args.service, tt.args.ports, defaultListWatchTimeout, false, tb)
 			if tt.wantErr != nil {
 				require.ErrorIs(t, err, tt.wantErr)
 			} else {

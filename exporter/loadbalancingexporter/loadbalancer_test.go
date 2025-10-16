@@ -12,13 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exportertest"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 	"k8s.io/client-go/tools/clientcmd"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/loadbalancingexporter/internal/metadata"
 )
 
 func TestNewLoadBalancerNoResolver(t *testing.T) {
@@ -39,7 +36,7 @@ func TestNewLoadBalancerInvalidStaticResolver(t *testing.T) {
 	ts, tb := getTelemetryAssets(t)
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			Static: configoptional.Some(StaticResolver{Hostnames: []string{}}),
+			Static: &StaticResolver{Hostnames: []string{}},
 		},
 	}
 
@@ -56,9 +53,9 @@ func TestNewLoadBalancerInvalidDNSResolver(t *testing.T) {
 	ts, tb := getTelemetryAssets(t)
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			DNS: configoptional.Some(DNSResolver{
+			DNS: &DNSResolver{
 				Hostname: "",
-			}),
+			},
 		},
 	}
 
@@ -75,9 +72,9 @@ func TestNewLoadBalancerInvalidK8sResolver(t *testing.T) {
 	ts, tb := getTelemetryAssets(t)
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			K8sSvc: configoptional.Some(K8sSvcResolver{
+			K8sSvc: &K8sSvcResolver{
 				Service: "",
-			}),
+			},
 		},
 	}
 
@@ -100,9 +97,9 @@ func TestLoadBalancerStart(t *testing.T) {
 	p.res = &mockResolver{}
 
 	// test
-	res := p.Start(t.Context(), componenttest.NewNopHost())
+	res := p.Start(context.Background(), componenttest.NewNopHost())
 	defer func() {
-		require.NoError(t, p.Shutdown(t.Context()))
+		require.NoError(t, p.Shutdown(context.Background()))
 	}()
 	// verify
 	assert.NoError(t, res)
@@ -112,9 +109,9 @@ func TestWithDNSResolver(t *testing.T) {
 	ts, tb := getTelemetryAssets(t)
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			DNS: configoptional.Some(DNSResolver{
+			DNS: &DNSResolver{
 				Hostname: "service-1",
-			}),
+			},
 		},
 	}
 
@@ -135,9 +132,9 @@ func TestWithDNSResolverNoEndpoints(t *testing.T) {
 	ts, tb := getTelemetryAssets(t)
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			DNS: configoptional.Some(DNSResolver{
+			DNS: &DNSResolver{
 				Hostname: "service-1",
-			}),
+			},
 		},
 	}
 
@@ -145,27 +142,27 @@ func TestWithDNSResolverNoEndpoints(t *testing.T) {
 	require.NotNil(t, p)
 	require.NoError(t, err)
 
-	err = p.Start(t.Context(), componenttest.NewNopHost())
+	err = p.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
-	defer func() { assert.NoError(t, p.Shutdown(t.Context())) }()
+	defer func() { assert.NoError(t, p.Shutdown(context.Background())) }()
 
 	// test
 	_, e, _ := p.exporterAndEndpoint([]byte{128, 128, 0, 0})
 
 	// verify
-	assert.Empty(t, e)
+	assert.Equal(t, "", e)
 }
 
 func TestMultipleResolvers(t *testing.T) {
 	ts, tb := getTelemetryAssets(t)
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			Static: configoptional.Some(StaticResolver{
+			Static: &StaticResolver{
 				Hostnames: []string{"endpoint-1", "endpoint-2"},
-			}),
-			DNS: configoptional.Some(DNSResolver{
+			},
+			DNS: &DNSResolver{
 				Hostname: "service-1",
-			}),
+			},
 		},
 	}
 
@@ -194,7 +191,7 @@ func TestStartFailureStaticResolver(t *testing.T) {
 	}
 
 	// test
-	res := p.Start(t.Context(), componenttest.NewNopHost())
+	res := p.Start(context.Background(), componenttest.NewNopHost())
 
 	// verify
 	assert.Equal(t, expectedErr, res)
@@ -203,12 +200,12 @@ func TestStartFailureStaticResolver(t *testing.T) {
 func TestLoadBalancerShutdown(t *testing.T) {
 	// prepare
 	cfg := simpleConfig()
-	p, err := newTracesExporter(exportertest.NewNopSettings(metadata.Type), cfg)
+	p, err := newTracesExporter(exportertest.NewNopSettings(), cfg)
 	require.NotNil(t, p)
 	require.NoError(t, err)
 
 	// test
-	res := p.Shutdown(t.Context())
+	res := p.Shutdown(context.Background())
 
 	// verify
 	assert.NoError(t, res)
@@ -250,11 +247,11 @@ func TestRemoveExtraExporters(t *testing.T) {
 	require.NotNil(t, p)
 	require.NoError(t, err)
 
-	p.addMissingExporters(t.Context(), []string{"endpoint-1", "endpoint-2"})
+	p.addMissingExporters(context.Background(), []string{"endpoint-1", "endpoint-2"})
 	resolved := []string{"endpoint-1"}
 
 	// test
-	p.removeExtraExporters(t.Context(), resolved)
+	p.removeExtraExporters(context.Background(), resolved)
 
 	// verify
 	assert.Len(t, p.exporters, 1)
@@ -276,8 +273,8 @@ func TestAddMissingExporters(t *testing.T) {
 	}, component.StabilityLevelDevelopment))
 	fn := func(ctx context.Context, endpoint string) (component.Component, error) {
 		oCfg := cfg.Protocol.OTLP
-		oCfg.ClientConfig.Endpoint = endpoint
-		return exporterFactory.CreateTraces(ctx, exportertest.NewNopSettings(exporterFactory.Type()), &oCfg)
+		oCfg.Endpoint = endpoint
+		return exporterFactory.CreateTraces(ctx, exportertest.NewNopSettings(), &oCfg)
 	}
 
 	p, err := newLoadBalancer(ts.Logger, cfg, fn, tb)
@@ -288,7 +285,7 @@ func TestAddMissingExporters(t *testing.T) {
 	resolved := []string{"endpoint-1", "endpoint-2"}
 
 	// test
-	p.addMissingExporters(t.Context(), resolved)
+	p.addMissingExporters(context.Background(), resolved)
 
 	// verify
 	assert.Len(t, p.exporters, 2)
@@ -311,8 +308,8 @@ func TestFailedToAddMissingExporters(t *testing.T) {
 	}, component.StabilityLevelDevelopment))
 	fn := func(ctx context.Context, endpoint string) (component.Component, error) {
 		oCfg := cfg.Protocol.OTLP
-		oCfg.ClientConfig.Endpoint = endpoint
-		return exporterFactory.CreateTraces(ctx, exportertest.NewNopSettings(metadata.Type), &oCfg)
+		oCfg.Endpoint = endpoint
+		return exporterFactory.CreateTraces(ctx, exportertest.NewNopSettings(), &oCfg)
 	}
 
 	p, err := newLoadBalancer(ts.Logger, cfg, fn, tb)
@@ -323,7 +320,7 @@ func TestFailedToAddMissingExporters(t *testing.T) {
 	resolved := []string{"endpoint-1", "endpoint-2"}
 
 	// test
-	p.addMissingExporters(t.Context(), resolved)
+	p.addMissingExporters(context.Background(), resolved)
 
 	// verify
 	assert.Len(t, p.exporters, 1)
@@ -375,7 +372,7 @@ func TestFailedExporterInRing(t *testing.T) {
 	ts, tb := getTelemetryAssets(t)
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			Static: configoptional.Some(StaticResolver{Hostnames: []string{"endpoint-1", "endpoint-2"}}),
+			Static: &StaticResolver{Hostnames: []string{"endpoint-1", "endpoint-2"}},
 		},
 	}
 	componentFactory := func(_ context.Context, _ string) (component.Component, error) {
@@ -385,7 +382,7 @@ func TestFailedExporterInRing(t *testing.T) {
 	require.NotNil(t, p)
 	require.NoError(t, err)
 
-	err = p.Start(t.Context(), componenttest.NewNopHost())
+	err = p.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 
 	// simulate the case where one of the exporters failed to be created and do not exist in the internal map
@@ -400,14 +397,14 @@ func TestFailedExporterInRing(t *testing.T) {
 
 	// test
 	// this trace ID will reach the endpoint-2 -- see the consistent hashing tests for more info
-	_, _, err = p.exporterAndEndpoint([]byte{128, 128, 1, 0})
+	_, _, err = p.exporterAndEndpoint([]byte{128, 128, 0, 0})
 
 	// verify
 	assert.Error(t, err)
 
 	// test
 	// this service name will reach the endpoint-2 -- see the consistent hashing tests for more info
-	_, _, err = p.exporterAndEndpoint([]byte("get-recommendations-2"))
+	_, _, err = p.exporterAndEndpoint([]byte("get-recommendations-1"))
 
 	// verify
 	assert.Error(t, err)
@@ -418,9 +415,9 @@ func TestNewLoadBalancerInvalidNamespaceAwsResolver(t *testing.T) {
 	ts, tb := getTelemetryAssets(t)
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			AWSCloudMap: configoptional.Some(AWSCloudMapResolver{
+			AWSCloudMap: &AWSCloudMapResolver{
 				NamespaceName: "",
-			}),
+			},
 		},
 	}
 
@@ -437,10 +434,10 @@ func TestNewLoadBalancerInvalidServiceAwsResolver(t *testing.T) {
 	ts, tb := getTelemetryAssets(t)
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			AWSCloudMap: configoptional.Some(AWSCloudMapResolver{
+			AWSCloudMap: &AWSCloudMapResolver{
 				NamespaceName: "cloudmap",
 				ServiceName:   "",
-			}),
+			},
 		},
 	}
 

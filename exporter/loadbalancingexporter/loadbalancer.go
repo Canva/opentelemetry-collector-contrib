@@ -46,16 +46,16 @@ func newLoadBalancer(logger *zap.Logger, cfg component.Config, factory component
 	oCfg := cfg.(*Config)
 
 	count := 0
-	if oCfg.Resolver.DNS.HasValue() {
+	if oCfg.Resolver.DNS != nil {
 		count++
 	}
-	if oCfg.Resolver.Static.HasValue() {
+	if oCfg.Resolver.Static != nil {
 		count++
 	}
-	if oCfg.Resolver.AWSCloudMap.HasValue() {
+	if oCfg.Resolver.AWSCloudMap != nil {
 		count++
 	}
-	if oCfg.Resolver.K8sSvc.HasValue() {
+	if oCfg.Resolver.K8sSvc != nil {
 		count++
 	}
 	if count > 1 {
@@ -63,48 +63,46 @@ func newLoadBalancer(logger *zap.Logger, cfg component.Config, factory component
 	}
 
 	var res resolver
-	if oCfg.Resolver.Static.HasValue() {
+	if oCfg.Resolver.Static != nil {
 		var err error
 		res, err = newStaticResolver(
-			oCfg.Resolver.Static.Get().Hostnames,
+			oCfg.Resolver.Static.Hostnames,
 			telemetry,
 		)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if oCfg.Resolver.DNS.HasValue() {
+	if oCfg.Resolver.DNS != nil {
 		dnsLogger := logger.With(zap.String("resolver", "dns"))
 
 		var err error
-		dnsResolver := oCfg.Resolver.DNS.Get()
 		res, err = newDNSResolver(
 			dnsLogger,
-			dnsResolver.Hostname,
-			dnsResolver.Port,
-			dnsResolver.Interval,
-			dnsResolver.Timeout,
+			oCfg.Resolver.DNS.Hostname,
+			oCfg.Resolver.DNS.Port,
+			oCfg.Resolver.DNS.Interval,
+			oCfg.Resolver.DNS.Timeout,
 			telemetry,
 		)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if oCfg.Resolver.K8sSvc.HasValue() {
+	if oCfg.Resolver.K8sSvc != nil {
 		k8sLogger := logger.With(zap.String("resolver", "k8s service"))
 
 		clt, err := newInClusterClient()
 		if err != nil {
 			return nil, err
 		}
-		k8sSvcResolver := oCfg.Resolver.K8sSvc.Get()
 		res, err = newK8sResolver(
 			clt,
 			k8sLogger,
-			k8sSvcResolver.Service,
-			k8sSvcResolver.Ports,
-			k8sSvcResolver.Timeout,
-			k8sSvcResolver.ReturnHostnames,
+			oCfg.Resolver.K8sSvc.Service,
+			oCfg.Resolver.K8sSvc.Ports,
+			oCfg.Resolver.K8sSvc.Timeout,
+			oCfg.Resolver.K8sSvc.ReturnHostnames,
 			telemetry,
 		)
 		if err != nil {
@@ -112,18 +110,17 @@ func newLoadBalancer(logger *zap.Logger, cfg component.Config, factory component
 		}
 	}
 
-	if oCfg.Resolver.AWSCloudMap.HasValue() {
+	if oCfg.Resolver.AWSCloudMap != nil {
 		awsCloudMapLogger := logger.With(zap.String("resolver", "aws_cloud_map"))
-		awsCloudMapResolver := oCfg.Resolver.AWSCloudMap.Get()
 		var err error
 		res, err = newCloudMapResolver(
 			awsCloudMapLogger,
-			&awsCloudMapResolver.NamespaceName,
-			&awsCloudMapResolver.ServiceName,
-			awsCloudMapResolver.Port,
-			&awsCloudMapResolver.HealthStatus,
-			awsCloudMapResolver.Interval,
-			awsCloudMapResolver.Timeout,
+			&oCfg.Resolver.AWSCloudMap.NamespaceName,
+			&oCfg.Resolver.AWSCloudMap.ServiceName,
+			oCfg.Resolver.AWSCloudMap.Port,
+			&oCfg.Resolver.AWSCloudMap.HealthStatus,
+			oCfg.Resolver.AWSCloudMap.Interval,
+			oCfg.Resolver.AWSCloudMap.Timeout,
 			telemetry,
 		)
 		if err != nil {

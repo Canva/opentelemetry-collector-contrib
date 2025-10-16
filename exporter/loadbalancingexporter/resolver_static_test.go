@@ -4,6 +4,7 @@
 package loadbalancingexporter
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,9 +23,9 @@ func TestInitialResolution(t *testing.T) {
 	res.onChange(func(endpoints []string) {
 		resolved = endpoints
 	})
-	require.NoError(t, res.start(t.Context()))
+	require.NoError(t, res.start(context.Background()))
 	defer func() {
-		require.NoError(t, res.shutdown(t.Context()))
+		require.NoError(t, res.shutdown(context.Background()))
 	}()
 
 	// verify
@@ -45,11 +46,11 @@ func TestResolvedOnlyOnce(t *testing.T) {
 	})
 
 	// test
-	require.NoError(t, res.start(t.Context()))
+	require.NoError(t, res.start(context.Background()))
 	defer func() {
-		require.NoError(t, res.shutdown(t.Context()))
+		require.NoError(t, res.shutdown(context.Background()))
 	}()
-	resolved, err := res.resolve(t.Context()) // second resolution, should be noop
+	resolved, err := res.resolve(context.Background()) // second resolution, should be noop
 
 	// verify
 	assert.NoError(t, err)

@@ -12,12 +12,11 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	conventions "go.opentelemetry.io/collector/semconv/v1.27.0"
 	"go.opentelemetry.io/otel/metric"
-	conventions "go.opentelemetry.io/otel/semconv/v1.27.0"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 
@@ -46,7 +45,7 @@ func newMetricsExporter(params exporter.Settings, cfg component.Config) (*metric
 	exporterFactory := otlpexporter.NewFactory()
 	cfFunc := func(ctx context.Context, endpoint string) (component.Component, error) {
 		oCfg := buildExporterConfig(cfg.(*Config), endpoint)
-		oParams := buildExporterSettings(exporterFactory.Type(), params, endpoint)
+		oParams := buildExporterSettings(params, endpoint)
 
 		return exporterFactory.CreateMetrics(ctx, oParams, &oCfg)
 	}
@@ -79,7 +78,7 @@ func newMetricsExporter(params exporter.Settings, cfg component.Config) (*metric
 	return &metricExporter, nil
 }
 
-func (*metricExporterImp) Capabilities() consumer.Capabilities {
+func (e *metricExporterImp) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: false}
 }
 
@@ -99,15 +98,10 @@ func (e *metricExporterImp) ConsumeMetrics(ctx context.Context, md pmetric.Metri
 
 	switch e.routingKey {
 	case svcRouting:
-		var errs []error
-		batches, errs = splitMetricsByResourceServiceName(md)
-		if len(errs) > 0 {
-			for _, ee := range errs {
-				e.logger.Error("failed to export metric", zap.Error(ee))
-			}
-			if len(batches) == 0 {
-				return consumererror.NewPermanent(errors.Join(errs...))
-			}
+		var err error
+		batches, err = splitMetricsByResourceServiceName(md)
+		if err != nil {
+			return err
 		}
 	case resourceRouting:
 		batches = splitMetricsByResourceID(md)
@@ -158,17 +152,15 @@ func (e *metricExporterImp) ConsumeMetrics(ctx context.Context, md pmetric.Metri
 	return errs
 }
 
-func splitMetricsByResourceServiceName(md pmetric.Metrics) (map[string]pmetric.Metrics, []error) {
+func splitMetricsByResourceServiceName(md pmetric.Metrics) (map[string]pmetric.Metrics, error) {
 	results := map[string]pmetric.Metrics{}
-	var errs []error
 
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		rm := md.ResourceMetrics().At(i)
 
-		svc, ok := rm.Resource().Attributes().Get(string(conventions.ServiceNameKey))
+		svc, ok := rm.Resource().Attributes().Get(conventions.AttributeServiceName)
 		if !ok {
-			errs = append(errs, fmt.Errorf("unable to get service name from resource metric with attributes: %v", rm.Resource().Attributes().AsRaw()))
-			continue
+			return nil, errors.New("unable to get service name")
 		}
 
 		newMD := pmetric.NewMetrics()
@@ -184,7 +176,7 @@ func splitMetricsByResourceServiceName(md pmetric.Metrics) (map[string]pmetric.M
 		}
 	}
 
-	return results, errs
+	return results, nil
 }
 
 func splitMetricsByResourceID(md pmetric.Metrics) map[string]pmetric.Metrics {

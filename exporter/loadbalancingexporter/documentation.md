@@ -8,71 +8,40 @@ The following telemetry is emitted by this component.
 
 ### otelcol_loadbalancer_backend_latency
 
-Response latency in ms for the backends. [development]
+Response latency in ms for the backends.
 
-| Unit | Metric Type | Value Type | Stability |
-| ---- | ----------- | ---------- | --------- |
-| ms | Histogram | Int | development |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| endpoint | The endpoint of the backend | Any Str |
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| ms | Histogram | Int |
 
 ### otelcol_loadbalancer_backend_outcome
 
-Number of successes and failures for each endpoint. [development]
+Number of successes and failures for each endpoint.
 
-| Unit | Metric Type | Value Type | Monotonic | Stability |
-| ---- | ----------- | ---------- | --------- | --------- |
-| {outcomes} | Sum | Int | true | development |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| success | Whether an outcome was successful | Any Bool |
+| Unit | Metric Type | Value Type | Monotonic |
+| ---- | ----------- | ---------- | --------- |
+| {outcomes} | Sum | Int | true |
 
 ### otelcol_loadbalancer_num_backend_updates
 
-Number of times the list of backends was updated. [development]
+Number of times the list of backends was updated.
 
-| Unit | Metric Type | Value Type | Monotonic | Stability |
-| ---- | ----------- | ---------- | --------- | --------- |
-| {updates} | Sum | Int | true | development |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| resolver | Resolver used | Str: ``aws``, ``dns``, ``k8s``, ``static`` |
+| Unit | Metric Type | Value Type | Monotonic |
+| ---- | ----------- | ---------- | --------- |
+| {updates} | Sum | Int | true |
 
 ### otelcol_loadbalancer_num_backends
 
-Current number of backends in use. [development]
+Current number of backends in use.
 
-| Unit | Metric Type | Value Type | Stability |
-| ---- | ----------- | ---------- | --------- |
-| {backends} | Gauge | Int | development |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| resolver | Resolver used | Str: ``aws``, ``dns``, ``k8s``, ``static`` |
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| {backends} | Gauge | Int |
 
 ### otelcol_loadbalancer_num_resolutions
 
-Number of times the resolver has triggered new resolutions. [development]
+Number of times the resolver has triggered new resolutions.
 
-| Unit | Metric Type | Value Type | Monotonic | Stability |
-| ---- | ----------- | ---------- | --------- | --------- |
-| {resolutions} | Sum | Int | true | development |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| success | Whether an outcome was successful | Any Bool |
-| resolver | Resolver used | Str: ``aws``, ``dns``, ``k8s``, ``static`` |
+| Unit | Metric Type | Value Type | Monotonic |
+| ---- | ----------- | ---------- | --------- |
+| {resolutions} | Sum | Int | true |

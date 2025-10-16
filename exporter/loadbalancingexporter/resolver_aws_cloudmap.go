@@ -85,11 +85,11 @@ func newCloudMapResolver(
 	// Using the Config value, create the DynamoDB client
 	svc := servicediscovery.NewFromConfig(cfg)
 
-	if namespaceName == nil || *namespaceName == "" {
+	if namespaceName == nil || len(*namespaceName) == 0 {
 		return nil, errNoNamespace
 	}
 
-	if serviceName == nil || *serviceName == "" {
+	if serviceName == nil || len(*serviceName) == 0 {
 		return nil, errNoServiceName
 	}
 

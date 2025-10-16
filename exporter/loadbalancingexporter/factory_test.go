@@ -4,6 +4,7 @@
 package loadbalancingexporter
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -11,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 	"go.opentelemetry.io/collector/exporter/exportertest"
@@ -26,15 +26,15 @@ import (
 func TestTracesExporterGetsCreatedWithValidConfiguration(t *testing.T) {
 	// prepare
 	factory := NewFactory()
-	creationParams := exportertest.NewNopSettings(metadata.Type)
+	creationParams := exportertest.NewNopSettings()
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			Static: configoptional.Some(StaticResolver{Hostnames: []string{"endpoint-1"}}),
+			Static: &StaticResolver{Hostnames: []string{"endpoint-1"}},
 		},
 	}
 
 	// test
-	exp, err := factory.CreateTraces(t.Context(), creationParams, cfg)
+	exp, err := factory.CreateTraces(context.Background(), creationParams, cfg)
 
 	// verify
 	assert.NoError(t, err)
@@ -44,15 +44,15 @@ func TestTracesExporterGetsCreatedWithValidConfiguration(t *testing.T) {
 func TestLogExporterGetsCreatedWithValidConfiguration(t *testing.T) {
 	// prepare
 	factory := NewFactory()
-	creationParams := exportertest.NewNopSettings(metadata.Type)
+	creationParams := exportertest.NewNopSettings()
 	cfg := &Config{
 		Resolver: ResolverSettings{
-			Static: configoptional.Some(StaticResolver{Hostnames: []string{"endpoint-1"}}),
+			Static: &StaticResolver{Hostnames: []string{"endpoint-1"}},
 		},
 	}
 
 	// test
-	exp, err := factory.CreateLogs(t.Context(), creationParams, cfg)
+	exp, err := factory.CreateLogs(context.Background(), creationParams, cfg)
 
 	// verify
 	assert.NoError(t, err)
@@ -77,6 +77,8 @@ func TestBuildExporterConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	factories.Exporters[metadata.Type] = NewFactory()
+	// https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/33594
+	// nolint:staticcheck
 	cfg, err := otelcoltest.LoadConfigAndValidate(filepath.Join("testdata", "test-build-exporter-config.yaml"), factories)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
@@ -100,20 +102,19 @@ func TestBuildExporterConfig(t *testing.T) {
 
 func TestBuildExporterSettings(t *testing.T) {
 	// prepare
-	creationParams := exportertest.NewNopSettings(metadata.Type)
+	creationParams := exportertest.NewNopSettings()
 	testEndpoint := "the-endpoint"
 	observedZapCore, observedLogs := observer.New(zap.InfoLevel)
 	creationParams.Logger = zap.New(observedZapCore)
-	typ := component.MustNewType("type")
 
 	// test
-	exporterParams := buildExporterSettings(typ, creationParams, testEndpoint)
+	exporterParams := buildExporterSettings(creationParams, testEndpoint)
 	exporterParams.Logger.Info("test")
 
 	// verify
 	expectedID := component.NewIDWithName(
-		typ,
-		fmt.Sprintf("%s_%s", creationParams.ID, testEndpoint),
+		creationParams.ID.Type(),
+		fmt.Sprintf("%s_%s", creationParams.ID.Name(), testEndpoint),
 	)
 	assert.Equal(t, expectedID, exporterParams.ID)
 
