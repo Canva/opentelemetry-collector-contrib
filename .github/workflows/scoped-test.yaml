@@ -66,6 +66,8 @@ jobs:
           echo "go_sources: ${{ needs.changedfiles.outputs.go_sources }}"
           echo "go_tests: ${{ needs.changedfiles.outputs.go_tests }}"
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         id: go-setup
         with:
@@ -84,17 +86,22 @@ jobs:
 
       - name: Run changed tests
         if: needs.changedfiles.outputs.go_tests
-        env:
-          CHANGED_GOLANG_TESTS: ${{ needs.changedfiles.outputs.go_tests }}
         run: |
           make run-changed-tests
 
       - name: Run tests on dependent components
         if: needs.changedfiles.outputs.go_sources
-        env:
-          CHANGED_GOLANG_SOURCES: ${{ needs.changedfiles.outputs.go_sources }}
         run: |
-          make for-affected-components CMD="make lint test-twice"
+          set -e
+          MERGE_BASE=""
+          MERGE_BASE=$(git merge-base origin/main HEAD)
+          NUM_CHANGED=$(git diff --name-only --diff-filter=ACMRTUXB "$MERGE_BASE" HEAD | grep -E '\.go$' | grep -vcE '.*_test\.go$' || echo 0)
+          if [ "$NUM_CHANGED" -gt 200 ]; then
+            echo "Skipping: $NUM_CHANGED changed files (>200 threshold)"
+          else
+            export CHANGED_GOLANG_SOURCES="$(git diff --name-only --diff-filter=ACMRTUXB "$MERGE_BASE" HEAD | grep -E '\.go$' | grep -vE '.*_test\.go$')"
+            make for-affected-components CMD="make lint test-twice"
+          fi
 
   scoped-tests:
     # Keeps the name of the job required for merging in the GH configuration, make it

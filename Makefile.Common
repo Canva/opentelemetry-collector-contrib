@@ -314,35 +314,23 @@ for-affected-components:
 		fi \
 	fi
 
-# Do not pass GOTESTSUM_OPT so that we do not re-run failures
-# and run each changed test three times.
-# This helps us catch flakes more easily before they land on main.
-# NOTE: Do not use CHANGED_GOLANG_TESTS variable as it can exceed shell limits
 .PHONY: run-changed-tests
 run-changed-tests:
-	@echo "Checking for affected tests..."
 	@cd $(SRC_ROOT); \
 	git diff main --name-only | grep -E '.*_test\.go$$' > /tmp/changed_tests.txt 2>/dev/null || true; \
 	if [ ! -s /tmp/changed_tests.txt ]; then \
-		echo "No go test changes detected."; \
+		echo "No test changes detected"; \
 	else \
 		NUM_TESTS=$$(wc -l < /tmp/changed_tests.txt | tr -d ' '); \
-		echo "Found $${NUM_TESTS} changed test files"; \
 		if [ $${NUM_TESTS} -gt 200 ]; then \
-			echo "Too many changed tests ($${NUM_TESTS}), skipping selective testing."; \
-			echo "This is expected during major upgrades. Run 'make gotest' to test all."; \
+			echo "Skipping: $${NUM_TESTS} changed tests (>200 threshold)"; \
 			rm -f /tmp/changed_tests.txt; \
 		else \
 			cat /tmp/changed_tests.txt | xargs -n 1 dirname | sort -u > /tmp/affected_dirs.txt; \
-			if [ ! -s /tmp/affected_dirs.txt ]; then \
-				echo "Failed to find the affected test directories."; \
-			else \
-				echo "Running tests in $$(wc -l < /tmp/affected_dirs.txt | tr -d ' ') directories..."; \
-				set -e; while IFS= read -r dir; do \
-					echo "Testing $${dir}..."; \
-					(cd "$${dir}" && $(GOTESTSUM) --packages="./..." -- $(GOTEST_OPT) -count=3 ); \
-				done < /tmp/affected_dirs.txt; \
-			fi; \
+			echo "Testing $$(wc -l < /tmp/affected_dirs.txt | tr -d ' ') directories..."; \
+			set -e; while IFS= read -r dir; do \
+				(cd "$${dir}" && $(GOTESTSUM) --packages="./..." -- $(GOTEST_OPT) -count=3 ); \
+			done < /tmp/affected_dirs.txt; \
 			rm -f /tmp/changed_tests.txt /tmp/affected_dirs.txt; \
 		fi; \
 	fi
