@@ -55,6 +55,7 @@ jobs:
   scoped-tests-matrix:
     needs: changedfiles
     # Temporarily disabled due to upgrade - too many changed files
+    # TODO: Remove this once the upgrade is complete
     if: false
     strategy:
       matrix:
@@ -109,6 +110,7 @@ jobs:
       - name: Interpret result
         run: |
           # Temporarily accepting skipped status during upgrade
+          # TODO: Remove this once the upgrade is complete
           if [[ success == ${{ needs.scoped-tests-matrix.result }} ]] || [[ skipped == ${{ needs.scoped-tests-matrix.result }} ]]
           then
             echo "All matrix jobs passed or skipped!"
