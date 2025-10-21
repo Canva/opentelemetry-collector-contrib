@@ -23,15 +23,17 @@ const (
 	resourceRouting
 	streamIDRouting
 	attrRouting
+	resourceKeysRouting
 )
 
 const (
-	svcRoutingStr        = "service"
-	traceIDRoutingStr    = "traceID"
-	metricNameRoutingStr = "metric"
-	resourceRoutingStr   = "resource"
-	streamIDRoutingStr   = "streamID"
-	attrRoutingStr       = "attributes"
+	svcRoutingStr          = "service"
+	traceIDRoutingStr      = "traceID"
+	metricNameRoutingStr   = "metric"
+	resourceRoutingStr     = "resource"
+	streamIDRoutingStr     = "streamID"
+	attrRoutingStr         = "attributes"
+	resourceKeysRoutingStr = "resource_keys"
 )
 
 // Config defines configuration for the exporter.
@@ -54,6 +56,9 @@ type Config struct {
 	// Keys are encoded as "name=value|name=value|" in the order configured. Missing attributes are encoded as "name=|".
 	// Non-string values are deterministically stringified.
 	RoutingAttributes []string `mapstructure:"routing_attributes"`
+
+	// ResourceKeys is used for resource_keys routing - routes based on resource attributes only
+	ResourceKeys []string `mapstructure:"resource_keys"`
 }
 
 // Validate checks if the exporter configuration is valid.
