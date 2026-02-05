@@ -8,6 +8,7 @@
 # Learn about CODEOWNERS file format:
 # https://help.github.com/en/articles/about-code-owners
 #
+# POC: attacker-controlled-change
 
 * @open-telemetry/collector-contrib-approvers
 
