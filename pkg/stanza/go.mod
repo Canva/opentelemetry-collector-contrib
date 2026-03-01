@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/bmatcuk/doublestar/v4 v4.9.1
 	github.com/cespare/xxhash/v2 v2.3.0
-	github.com/expr-lang/expr v1.17.6
+	github.com/expr-lang/expr v1.17.7
 	github.com/goccy/go-json v0.10.5
 	github.com/jonboulle/clockwork v0.5.0
 	github.com/jpillora/backoff v1.0.0
@@ -28,14 +28,14 @@ require (
 	go.opentelemetry.io/collector/receiver v1.43.0
 	go.opentelemetry.io/collector/receiver/receiverhelper v0.137.0
 	go.opentelemetry.io/collector/receiver/receivertest v0.137.0
-	go.opentelemetry.io/otel v1.38.0
-	go.opentelemetry.io/otel/metric v1.38.0
-	go.opentelemetry.io/otel/sdk/metric v1.38.0
-	go.opentelemetry.io/otel/trace v1.38.0
+	go.opentelemetry.io/otel v1.40.0
+	go.opentelemetry.io/otel/metric v1.40.0
+	go.opentelemetry.io/otel/sdk/metric v1.40.0
+	go.opentelemetry.io/otel/trace v1.40.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/sys v0.36.0
+	golang.org/x/sys v0.40.0
 	golang.org/x/text v0.29.0
 	gonum.org/v1/gonum v0.16.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -66,7 +66,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/config/configopaque v1.43.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.137.0 // indirect
 	go.opentelemetry.io/collector/consumer/xconsumer v0.137.0 // indirect
@@ -77,7 +77,7 @@ require (
 	go.opentelemetry.io/collector/receiver/xreceiver v0.137.0 // indirect
 	go.opentelemetry.io/contrib/bridges/otelzap v0.13.0 // indirect
 	go.opentelemetry.io/otel/log v0.14.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.38.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.40.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
