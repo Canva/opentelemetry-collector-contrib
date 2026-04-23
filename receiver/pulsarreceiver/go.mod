@@ -1,6 +1,6 @@
 module github.com/open-telemetry/opentelemetry-collector-contrib/receiver/pulsarreceiver
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/apache/pulsar-client-go v0.16.0
@@ -22,7 +22,7 @@ require (
 	go.opentelemetry.io/collector/receiver v1.43.0
 	go.opentelemetry.io/collector/receiver/receiverhelper v0.137.0
 	go.opentelemetry.io/collector/receiver/receivertest v0.137.0
-	go.opentelemetry.io/otel v1.38.0
+	go.opentelemetry.io/otel v1.43.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/zap v1.27.0
 )
@@ -80,7 +80,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/confmap/xconfmap v0.137.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.137.0 // indirect
 	go.opentelemetry.io/collector/consumer/xconsumer v0.137.0 // indirect
@@ -91,10 +91,10 @@ require (
 	go.opentelemetry.io/collector/receiver/xreceiver v0.137.0 // indirect
 	go.opentelemetry.io/contrib/bridges/otelzap v0.13.0 // indirect
 	go.opentelemetry.io/otel/log v0.14.0 // indirect
-	go.opentelemetry.io/otel/metric v1.38.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.38.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.38.0 // indirect
-	go.opentelemetry.io/otel/trace v1.38.0 // indirect
+	go.opentelemetry.io/otel/metric v1.43.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.43.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.43.0 // indirect
+	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
@@ -103,7 +103,7 @@ require (
 	golang.org/x/mod v0.27.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
