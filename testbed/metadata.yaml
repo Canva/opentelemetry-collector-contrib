@@ -1,4 +1,4 @@
 status:
   codeowners:
-    active: [open-telemetry/collector-approvers]#minoredit
+    active: [open-telemetry/collector-approvers]#minor
   class: pkg
