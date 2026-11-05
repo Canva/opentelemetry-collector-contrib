@@ -35,9 +35,10 @@ var _ exporter.Traces = (*traceExporterImp)(nil)
 type exporterTraces map[*wrappedExporter]ptrace.Traces
 
 type traceExporterImp struct {
-	loadBalancer *loadBalancer
-	routingKey   routingKey
-	routingAttrs []string
+	loadBalancer        *loadBalancer
+	routingKey          routingKey
+	routingAttrs        []string
+	routingResourceKeys []string
 
 	logger     *zap.Logger
 	stopped    bool
@@ -78,6 +79,9 @@ func newTracesExporter(params exporter.Settings, cfg component.Config) (*traceEx
 	case attrRoutingStr:
 		traceExporter.routingKey = attrRouting
 		traceExporter.routingAttrs = cfg.(*Config).RoutingAttributes
+	case resourceKeysRoutingStr, resourceRoutingStr:
+		traceExporter.routingKey = resourceKeysRouting
+		traceExporter.routingResourceKeys = cfg.(*Config).ResourceKeys
 	case traceIDRoutingStr, "":
 	default:
 		return nil, fmt.Errorf("unsupported routing_key: %s", cfg.(*Config).RoutingKey)
@@ -111,7 +115,13 @@ func (e *traceExporterImp) ConsumeTraces(ctx context.Context, td ptrace.Traces) 
 
 	exporterSegregatedTraces := make(exporterTraces)
 	for _, batch := range batches {
-		routingID, err := routingIdentifiersFromTraces(batch, e.routingKey, e.routingAttrs)
+		var routingID map[string]bool
+		var err error
+		if e.routingKey == resourceKeysRouting {
+			routingID, err = e.routingIdentifiersFromResourceKeys(batch)
+		} else {
+			routingID, err = routingIdentifiersFromTraces(batch, e.routingKey, e.routingAttrs)
+		}
 		if err != nil {
 			// Release the consumeWG counts already added for backends collected so far;
 			// otherwise Shutdown's consumeWG.Wait() would hang on the skipped Done() calls.
@@ -331,5 +341,52 @@ func routingIdentifiersFromTraces(td ptrace.Traces, rType routingKey, attrs []st
 		ids[rKey.String()] = true
 	}
 
+	return ids, nil
+}
+
+// routingIdentifiersFromResourceKeys routes traces based on resource attributes only.
+// Falls back to traceID if no matching resource attribute is found.
+func (e *traceExporterImp) routingIdentifiersFromResourceKeys(td ptrace.Traces) (map[string]bool, error) {
+	ids := make(map[string]bool)
+	rs := td.ResourceSpans()
+	if rs.Len() == 0 {
+		return nil, errors.New("empty resource spans")
+	}
+
+	ils := rs.At(0).ScopeSpans()
+	if ils.Len() == 0 {
+		return nil, errors.New("empty scope spans")
+	}
+
+	spans := ils.At(0).Spans()
+	if spans.Len() == 0 {
+		return nil, errors.New("empty spans")
+	}
+
+	// Try to route based on resource attributes
+	var missingResourceKey bool
+	for i := 0; i < rs.Len(); i++ {
+		var resourceKeyFound bool
+		rsi := rs.At(i)
+		for _, attrKey := range e.routingResourceKeys {
+			if v, ok := rsi.Resource().Attributes().Get(attrKey); ok {
+				ids[v.AsString()] = true
+				resourceKeyFound = true
+				break
+			}
+		}
+		if !resourceKeyFound {
+			missingResourceKey = true
+		}
+	}
+
+	// If we found at least one resource key, return those IDs
+	if !missingResourceKey {
+		return ids, nil
+	}
+
+	// Fallback to traceID routing if no resource keys found
+	tid := spans.At(0).TraceID()
+	ids[string(tid[:])] = true
 	return ids, nil
 }
